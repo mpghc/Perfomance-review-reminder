@@ -1,0 +1,70 @@
+@page "{id:int}"
+@model PerformanceReviewBot.Pages.Employees.DetailsModel
+@{
+    ViewData["Title"] = "Employee Details";
+}
+
+<h2>Employee Details</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Employee.FirstName)</dt>
+            <dd class="col-sm-9">@Model.Employee.FirstName</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Employee.LastName)</dt>
+            <dd class="col-sm-9">@Model.Employee.LastName</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Employee.Email)</dt>
+            <dd class="col-sm-9">@Model.Employee.Email</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Employee.Department)</dt>
+            <dd class="col-sm-9">@Model.Employee.Department</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Employee.HireDate)</dt>
+            <dd class="col-sm-9">@Model.Employee.HireDate.ToShortDateString()</dd>
+        </dl>
+    </div>
+</div>
+
+@if (Model.Employee.PerformanceReviews.Any())
+{
+    <h4>Performance Reviews</h4>
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Review Date</th>
+                <th>Status</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var review in Model.Employee.PerformanceReviews)
+            {
+                <tr>
+                    <td>@review.ReviewDate.ToShortDateString()</td>
+                    <td>
+                        @if (review.Status == "Overdue")
+                        {
+                            <span class="badge bg-danger">@review.Status</span>
+                        }
+                        else if (review.Status == "Completed")
+                        {
+                            <span class="badge bg-success">@review.Status</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">@review.Status</span>
+                        }
+                    </td>
+                    <td>@review.Notes</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div>
+    <a asp-page="Edit" asp-route-id="@Model.Employee.Id" class="btn btn-warning">Edit</a>
+    <a asp-page="Index" class="btn btn-secondary">Back to List</a>
+</div>

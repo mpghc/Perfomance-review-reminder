@@ -1,0 +1,40 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="text-center mb-4">
+    <h1 class="display-4">&#128197; Performance Review Bot</h1>
+    <p class="lead">Manage employees and track performance reviews efficiently.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">&#128101; Employees</h5>
+                <p class="card-text">View and manage all employees in the system.</p>
+                <a asp-page="/Employees/Index" class="btn btn-primary">Manage Employees</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">&#128203; Reviews</h5>
+                <p class="card-text">Schedule and track performance reviews.</p>
+                <a asp-page="/Reviews/Index" class="btn btn-success">Manage Reviews</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-dark">
+            <div class="card-body text-center">
+                <h5 class="card-title">&#9881; Admin Dashboard</h5>
+                <p class="card-text">See overdue and upcoming reviews at a glance.</p>
+                <a asp-page="/Admin/Dashboard" class="btn btn-dark">Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>

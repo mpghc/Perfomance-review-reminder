@@ -1,0 +1,52 @@
+@page
+@model PerformanceReviewBot.Pages.Reviews.IndexModel
+@{
+    ViewData["Title"] = "Performance Reviews";
+}
+
+<h2>Performance Reviews</h2>
+
+<p>
+    <a asp-page="Create" class="btn btn-success">Schedule New Review</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>@Html.DisplayNameFor(model => model.Reviews[0].ReviewDate)</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Reviews)
+        {
+            <tr>
+                <td>@item.Employee.FullName</td>
+                <td>@item.ReviewDate.ToShortDateString()</td>
+                <td>
+                    @if (item.Status == "Overdue")
+                    {
+                        <span class="badge bg-danger">@item.Status</span>
+                    }
+                    else if (item.Status == "Completed")
+                    {
+                        <span class="badge bg-success">@item.Status</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-primary">@item.Status</span>
+                    }
+                </td>
+                <td>@item.Notes</td>
+                <td>
+                    <a asp-page="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
+                    <a asp-page="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-page="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,102 @@
+@page
+@model PerformanceReviewBot.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "_AdminLayout";
+}
+
+<h2>Admin Dashboard</h2>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">&#9888; Overdue Reviews (@Model.OverdueReviews.Count)</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.OverdueReviews.Any())
+                {
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Review Date</th>
+                                <th>Notes</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var review in Model.OverdueReviews)
+                            {
+                                <tr>
+                                    <td>@review.Employee.FullName</td>
+                                    <td>@review.ReviewDate.ToShortDateString()</td>
+                                    <td>@review.Notes</td>
+                                    <td>
+                                        <a asp-page="/Reviews/Edit" asp-route-id="@review.Id" class="btn btn-sm btn-outline-warning">Edit</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted">No overdue reviews. Great job!</p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">&#128197; Reviews This Month (@Model.ThisMonthReviews.Count)</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.ThisMonthReviews.Any())
+                {
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Review Date</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var review in Model.ThisMonthReviews)
+                            {
+                                <tr>
+                                    <td>@review.Employee.FullName</td>
+                                    <td>@review.ReviewDate.ToShortDateString()</td>
+                                    <td>
+                                        @if (review.Status == "Overdue")
+                                        {
+                                            <span class="badge bg-danger">@review.Status</span>
+                                        }
+                                        else if (review.Status == "Completed")
+                                        {
+                                            <span class="badge bg-success">@review.Status</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary">@review.Status</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-page="/Reviews/Details" asp-route-id="@review.Id" class="btn btn-sm btn-outline-info">View</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted">No reviews scheduled this month.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
