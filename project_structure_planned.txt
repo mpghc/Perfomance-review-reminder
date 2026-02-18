@@ -1,0 +1,8 @@
+.
+├── CREATE_ISSUES_GUIDE.md
+├── ITERATIONS.md
+├── PROJECT_SUMMARY.md
+├── README.md
+└── project_structure_planned.txt
+
+1 directory, 5 files
