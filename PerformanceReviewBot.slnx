@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PerformanceReviewBot.Tests/PerformanceReviewBot.Tests.csproj" />
+  <Project Path="PerformanceReviewBot/PerformanceReviewBot.csproj" />
+</Solution>
