@@ -1,7 +1,100 @@
 ﻿@page "/"
+@using PerformanceReviewBot.Services
+@inject PerformanceReviewService ReviewService
+@inject ReminderService ReminderService
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Home - Performance Review Bot</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <span class="bi bi-house-door-fill"></span> Performance Review Bot
+            </h1>
+            <p class="lead">Manage performance reviews, track feedback, and never miss a reminder.</p>
+        </div>
+    </div>
 
-Welcome to your new app.
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="bi bi-calendar-check-fill text-primary"></span> Current Month Reviews
+                    </h5>
+                    <p class="card-text display-4">@currentMonthReviews</p>
+                    <a href="/reviews" class="btn btn-primary">View Reviews</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="bi bi-exclamation-triangle-fill text-warning"></span> Missing Feedback
+                    </h5>
+                    <p class="card-text display-4">@missingFeedback</p>
+                    <a href="/admin/missing-feedback" class="btn btn-warning">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="bi bi-bell-fill text-success"></span> Reminders Sent
+                    </h5>
+                    <p class="card-text display-4">@remindersSent</p>
+                    <a href="/admin/reminder-logs" class="btn btn-success">View Logs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3>Quick Actions</h3>
+        </div>
+        <div class="col-md-3">
+            <a href="/employees" class="btn btn-outline-primary w-100 mb-3">
+                <span class="bi bi-people-fill"></span> Manage Employees
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/reviews/schedule" class="btn btn-outline-success w-100 mb-3">
+                <span class="bi bi-plus-circle-fill"></span> Schedule Review
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/feedback/my-feedback" class="btn btn-outline-info w-100 mb-3">
+                <span class="bi bi-chat-left-text-fill"></span> My Feedback
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/admin" class="btn btn-outline-danger w-100 mb-3">
+                <span class="bi bi-speedometer2"></span> Admin Panel
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int currentMonthReviews;
+    private int missingFeedback;
+    private int remindersSent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var reviews = await ReviewService.GetCurrentMonthReviewsAsync();
+        currentMonthReviews = reviews.Count;
+
+        var missing = await ReviewService.GetReviewsWithMissingFeedbackAsync();
+        missingFeedback = missing.Count;
+
+        var logs = await ReminderService.GetReminderLogsAsync();
+        remindersSent = logs.Count;
+    }
+}
+

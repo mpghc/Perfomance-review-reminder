@@ -1,0 +1,181 @@
+@page "/reviews/{id:int}"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject PerformanceReviewService ReviewService
+@inject FeedbackService FeedbackService
+@rendermode InteractiveServer
+
+<PageTitle>Review Details</PageTitle>
+
+<div class="container mt-4">
+    @if (review == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><span class="bi bi-calendar-check-fill"></span> Performance Review</h2>
+            <div>
+                <a href="/feedback/submit/@review.Id" class="btn btn-success">
+                    <span class="bi bi-chat-left-text"></span> Add Feedback
+                </a>
+                <a href="/reviews" class="btn btn-secondary">
+                    <span class="bi bi-arrow-left"></span> Back to List
+                </a>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5>Review Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Employee:</strong> <a href="/employees/@review.EmployeeId">@review.Employee.FullName</a></p>
+                        <p><strong>Department:</strong> @review.Employee.Department</p>
+                        <p><strong>Manager:</strong> @(review.Employee.Manager?.FullName ?? "N/A")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Review Date:</strong> @review.ReviewDate.ToString("yyyy-MM-dd")</p>
+                        <p><strong>Status:</strong> 
+                            @switch (review.Status)
+                            {
+                                case ReviewStatus.Scheduled:
+                                    <span class="badge bg-info">Scheduled</span>
+                                    break;
+                                case ReviewStatus.InProgress:
+                                    <span class="badge bg-warning">In Progress</span>
+                                    break;
+                                case ReviewStatus.Completed:
+                                    <span class="badge bg-success">Completed</span>
+                                    break;
+                                case ReviewStatus.Cancelled:
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    break;
+                            }
+                        </p>
+                        <p><strong>Created:</strong> @review.CreatedDate.ToString("yyyy-MM-dd")</p>
+                        @if (review.CompletedDate.HasValue)
+                        {
+                            <p><strong>Completed:</strong> @review.CompletedDate.Value.ToString("yyyy-MM-dd")</p>
+                        }
+                    </div>
+                </div>
+
+                @if (review.Status != ReviewStatus.Completed && review.Status != ReviewStatus.Cancelled)
+                {
+                    <div class="mt-3">
+                        <button class="btn btn-warning" @onclick="() => UpdateStatus(ReviewStatus.InProgress)">
+                            Mark In Progress
+                        </button>
+                        <button class="btn btn-success" @onclick="() => UpdateStatus(ReviewStatus.Completed)">
+                            Mark Completed
+                        </button>
+                        <button class="btn btn-danger" @onclick="() => UpdateStatus(ReviewStatus.Cancelled)">
+                            Cancel Review
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5>Feedback (@feedbacks.Count)</h5>
+            </div>
+            <div class="card-body">
+                @if (!feedbacks.Any())
+                {
+                    <div class="alert alert-info">No feedback submitted yet.</div>
+                }
+                else
+                {
+                    @foreach (var feedback in feedbacks)
+                    {
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h6>
+                                        @feedback.Reviewer.FullName
+                                        @if (feedback.IsManagerFeedback)
+                                        {
+                                            <span class="badge bg-primary">Manager</span>
+                                        }
+                                    </h6>
+                                    <small class="text-muted">@feedback.SubmittedDate.ToString("yyyy-MM-dd HH:mm")</small>
+                                </div>
+                                
+                                @if (feedback.Rating.HasValue)
+                                {
+                                    <p class="mb-2">
+                                        <strong>Rating:</strong> 
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            @if (i <= feedback.Rating.Value)
+                                            {
+                                                <span class="bi bi-star-fill text-warning"></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="bi bi-star text-muted"></span>
+                                            }
+                                        }
+                                        (@feedback.Rating.Value/5)
+                                    </p>
+                                }
+                                
+                                <p class="mb-0"><strong>Comments:</strong></p>
+                                <p>@feedback.Comments</p>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-success mt-3">@message</div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private PerformanceReview? review;
+    private List<Feedback> feedbacks = new();
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReviewAsync();
+    }
+
+    private async Task LoadReviewAsync()
+    {
+        review = await ReviewService.GetReviewByIdAsync(Id);
+        if (review != null)
+        {
+            feedbacks = await FeedbackService.GetFeedbackByReviewIdAsync(review.Id);
+        }
+    }
+
+    private async Task UpdateStatus(ReviewStatus newStatus)
+    {
+        try
+        {
+            await ReviewService.UpdateReviewStatusAsync(Id, newStatus);
+            message = $"Review status updated to {newStatus}";
+            await LoadReviewAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            message = $"Error: {ex.Message}";
+        }
+    }
+}

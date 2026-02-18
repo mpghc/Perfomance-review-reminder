@@ -1,0 +1,130 @@
+@page "/admin/reminder-logs"
+@layout AdminLayout
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject ReminderService ReminderService
+@rendermode InteractiveServer
+
+<PageTitle>Reminder Logs</PageTitle>
+
+<div class="container mt-4">
+    <h2><span class="bi bi-bell-fill"></span> Reminder Logs</h2>
+
+    <div class="alert alert-info mt-3">
+        This page shows all reminder notifications that have been sent by the system.
+    </div>
+
+    @if (logs == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else if (!logs.Any())
+    {
+        <div class="alert alert-warning">No reminders have been sent yet.</div>
+    }
+    else
+    {
+        <div class="card mt-3">
+            <div class="card-header bg-primary text-white">
+                <h5>All Reminder Logs (@logs.Count)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sent Date</th>
+                                <th>Recipient</th>
+                                <th>Type</th>
+                                <th>Review For</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in logs)
+                            {
+                                <tr>
+                                    <td>@log.SentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>
+                                        <a href="/employees/@log.EmployeeId">@log.Employee.FullName</a><br />
+                                        <small class="text-muted">@log.Employee.Email</small>
+                                    </td>
+                                    <td>
+                                        @switch (log.ReminderType)
+                                        {
+                                            case ReminderType.ReviewDue:
+                                                <span class="badge bg-info">Review Due</span>
+                                                break;
+                                            case ReminderType.FeedbackMissing:
+                                                <span class="badge bg-warning">Feedback Missing</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="/employees/@log.PerformanceReview.EmployeeId">
+                                            @log.PerformanceReview.Employee.FullName
+                                        </a><br />
+                                        <small class="text-muted">Due: @log.PerformanceReview.ReviewDate.ToString("yyyy-MM-dd")</small>
+                                    </td>
+                                    <td>@log.Message</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5>Reminder Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Total Reminders Sent:</strong> @logs.Count</p>
+                        <p><strong>Review Due Reminders:</strong> @logs.Count(l => l.ReminderType == ReminderType.ReviewDue)</p>
+                        <p><strong>Missing Feedback Reminders:</strong> @logs.Count(l => l.ReminderType == ReminderType.FeedbackMissing)</p>
+                        
+                        @{
+                            var today = DateTime.UtcNow.Date;
+                            var todayLogs = logs.Count(l => l.SentDate.Date == today);
+                        }
+                        <p><strong>Reminders Sent Today:</strong> @todayLogs</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5>Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var recentLogs = logs.Take(5);
+                        }
+                        <ul class="list-group">
+                            @foreach (var log in recentLogs)
+                            {
+                                <li class="list-group-item">
+                                    <small class="text-muted">@log.SentDate.ToString("HH:mm")</small><br />
+                                    <strong>@log.Employee.FullName</strong> - @log.ReminderType
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ReminderLog>? logs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        logs = await ReminderService.GetReminderLogsAsync();
+    }
+}

@@ -1,0 +1,162 @@
+@page "/admin/missing-feedback"
+@layout AdminLayout
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject PerformanceReviewService ReviewService
+@rendermode InteractiveServer
+
+<PageTitle>Missing Feedback Report</PageTitle>
+
+<div class="container mt-4">
+    <h2><span class="bi bi-exclamation-triangle-fill"></span> Missing Feedback Report</h2>
+
+    <div class="alert alert-warning mt-3">
+        <strong>Note:</strong> This report shows performance reviews in the current month that are missing manager feedback.
+    </div>
+
+    @if (reviewsWithMissingFeedback == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else if (!reviewsWithMissingFeedback.Any())
+    {
+        <div class="alert alert-success mt-3">
+            <span class="bi bi-check-circle-fill"></span> Great! All reviews have the required feedback.
+        </div>
+    }
+    else
+    {
+        <div class="card mt-3">
+            <div class="card-header bg-warning">
+                <h5>Reviews Missing Manager Feedback (@reviewsWithMissingFeedback.Count)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Manager</th>
+                                <th>Review Date</th>
+                                <th>Status</th>
+                                <th>Days Until/Past Due</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var review in reviewsWithMissingFeedback)
+                            {
+                                var daysUntil = (review.ReviewDate - DateTime.UtcNow).Days;
+                                var isPastDue = daysUntil < 0;
+                                
+                                <tr class="@(isPastDue ? "table-danger" : "")">
+                                    <td>
+                                        <a href="/employees/@review.EmployeeId">@review.Employee.FullName</a>
+                                    </td>
+                                    <td>@review.Employee.Department</td>
+                                    <td>
+                                        @if (review.Employee.Manager != null)
+                                        {
+                                            <a href="/employees/@review.Employee.ManagerId">@review.Employee.Manager.FullName</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No Manager</span>
+                                        }
+                                    </td>
+                                    <td>@review.ReviewDate.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        @switch (review.Status)
+                                        {
+                                            case ReviewStatus.Scheduled:
+                                                <span class="badge bg-info">Scheduled</span>
+                                                break;
+                                            case ReviewStatus.InProgress:
+                                                <span class="badge bg-warning">In Progress</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (isPastDue)
+                                        {
+                                            <span class="badge bg-danger">@Math.Abs(daysUntil) days overdue</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">@daysUntil days remaining</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="/reviews/@review.Id" class="btn btn-sm btn-info">
+                                            <span class="bi bi-eye"></span> View
+                                        </a>
+                                        <a href="/feedback/submit/@review.Id" class="btn btn-sm btn-success">
+                                            <span class="bi bi-chat-left-text"></span> Add Feedback
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5>Summary by Manager</h5>
+            </div>
+            <div class="card-body">
+                @{
+                    var managerSummary = reviewsWithMissingFeedback
+                        .Where(r => r.Employee.Manager != null)
+                        .GroupBy(r => r.Employee.Manager)
+                        .OrderByDescending(g => g.Count());
+                }
+
+                @if (managerSummary.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Manager</th>
+                                    <th>Department</th>
+                                    <th>Missing Feedbacks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var group in managerSummary)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="/employees/@group.Key.Id">@group.Key.FullName</a>
+                                        </td>
+                                        <td>@group.Key.Department</td>
+                                        <td>
+                                            <span class="badge bg-warning">@group.Count()</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No manager data available.</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PerformanceReview>? reviewsWithMissingFeedback;
+
+    protected override async Task OnInitializedAsync()
+    {
+        reviewsWithMissingFeedback = await ReviewService.GetReviewsWithMissingFeedbackAsync();
+    }
+}

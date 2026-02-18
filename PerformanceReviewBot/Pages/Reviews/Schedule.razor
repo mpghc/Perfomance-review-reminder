@@ -1,0 +1,93 @@
+@page "/reviews/schedule"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject PerformanceReviewService ReviewService
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Schedule Performance Review</PageTitle>
+
+<div class="container mt-4">
+    <h2><span class="bi bi-calendar-plus-fill"></span> Schedule Performance Review</h2>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <EditForm Model="review" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="mb-3">
+                    <label class="form-label">Employee *</label>
+                    <InputSelect TValue="int" @@bind-Value="review.EmployeeId" class="form-select" required>
+                        <option value="0">-- Select Employee --</option>
+                        @if (employees != null)
+                        {
+                            @foreach (var employee in employees)
+                            {
+                                <option value="@employee.Id">@employee.FullName - @employee.Department</option>
+                            }
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Review Date *</label>
+                    <InputDate TValue="DateTime" @@bind-Value="review.ReviewDate" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <InputSelect TValue="ReviewStatus" @@bind-Value="review.Status" class="form-select">
+                        <option value="@ReviewStatus.Scheduled">Scheduled</option>
+                        <option value="@ReviewStatus.InProgress">In Progress</option>
+                    </InputSelect>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="bi bi-check-circle"></span> Schedule Review
+                    </button>
+                    <a href="/reviews" class="btn btn-secondary ms-2">
+                        <span class="bi bi-x-circle"></span> Cancel
+                    </a>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mt-3">@errorMessage</div>
+                }
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PerformanceReview review = new() { ReviewDate = DateTime.Today };
+    private List<Employee>? employees;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        employees = await EmployeeService.GetAllEmployeesAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            if (review.EmployeeId == 0)
+            {
+                errorMessage = "Please select an employee.";
+                return;
+            }
+
+            await ReviewService.ScheduleReviewAsync(review);
+            Navigation.NavigateTo("/reviews");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error scheduling review: {ex.Message}";
+        }
+    }
+}

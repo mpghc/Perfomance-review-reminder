@@ -1,0 +1,145 @@
+@page "/employees/{id:int}"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject EmployeeService EmployeeService
+@inject PerformanceReviewService ReviewService
+@rendermode InteractiveServer
+
+<PageTitle>Employee Details</PageTitle>
+
+<div class="container mt-4">
+    @if (employee == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><span class="bi bi-person-fill"></span> @employee.FullName</h2>
+            <div>
+                <a href="/employees/edit/@employee.Id" class="btn btn-warning">
+                    <span class="bi bi-pencil"></span> Edit
+                </a>
+                <a href="/employees" class="btn btn-secondary">
+                    <span class="bi bi-arrow-left"></span> Back to List
+                </a>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5>Employee Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Email:</strong> @employee.Email</p>
+                        <p><strong>Department:</strong> @employee.Department</p>
+                        <p><strong>Role:</strong> 
+                            @if (employee.IsManager)
+                            {
+                                <span class="badge bg-primary">Manager</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Employee</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Manager:</strong> @(employee.Manager?.FullName ?? "N/A")</p>
+                        <p><strong>Created Date:</strong> @employee.CreatedDate.ToShortDateString()</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (employee.IsManager && employee.DirectReports.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5>Direct Reports (@employee.DirectReports.Count)</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        @foreach (var report in employee.DirectReports)
+                        {
+                            <li class="list-group-item">
+                                <a href="/employees/@report.Id">@report.FullName</a> - @report.Department
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        @if (reviews != null && reviews.Any())
+        {
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5>Performance Reviews (@reviews.Count)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Review Date</th>
+                                    <th>Status</th>
+                                    <th>Feedbacks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var review in reviews)
+                                {
+                                    <tr>
+                                        <td>@review.ReviewDate.ToShortDateString()</td>
+                                        <td>
+                                            @switch (review.Status)
+                                            {
+                                                case ReviewStatus.Scheduled:
+                                                    <span class="badge bg-info">Scheduled</span>
+                                                    break;
+                                                case ReviewStatus.InProgress:
+                                                    <span class="badge bg-warning">In Progress</span>
+                                                    break;
+                                                case ReviewStatus.Completed:
+                                                    <span class="badge bg-success">Completed</span>
+                                                    break;
+                                                case ReviewStatus.Cancelled:
+                                                    <span class="badge bg-danger">Cancelled</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>@review.Feedbacks.Count</td>
+                                        <td>
+                                            <a href="/reviews/@review.Id" class="btn btn-sm btn-info">View</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Employee? employee;
+    private List<PerformanceReview>? reviews;
+
+    protected override async Task OnInitializedAsync()
+    {
+        employee = await EmployeeService.GetEmployeeByIdAsync(Id);
+        if (employee != null)
+        {
+            reviews = await ReviewService.GetReviewsByEmployeeAsync(employee.Id);
+        }
+    }
+}

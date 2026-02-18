@@ -1,0 +1,81 @@
+@page "/employees"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Employees</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><span class="bi bi-people-fill"></span> Employees</h2>
+        <a href="/employees/create" class="btn btn-primary">
+            <span class="bi bi-plus-circle"></span> Add Employee
+        </a>
+    </div>
+
+    @if (employees == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else if (!employees.Any())
+    {
+        <div class="alert alert-info">No employees found. Add your first employee!</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Manager</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var employee in employees)
+                    {
+                        <tr>
+                            <td>@employee.FullName</td>
+                            <td>@employee.Email</td>
+                            <td>@employee.Department</td>
+                            <td>@(employee.Manager?.FullName ?? "N/A")</td>
+                            <td>
+                                @if (employee.IsManager)
+                                {
+                                    <span class="badge bg-primary">Manager</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Employee</span>
+                                }
+                            </td>
+                            <td>
+                                <a href="/employees/@employee.Id" class="btn btn-sm btn-info">
+                                    <span class="bi bi-eye"></span> View
+                                </a>
+                                <a href="/employees/edit/@employee.Id" class="btn btn-sm btn-warning">
+                                    <span class="bi bi-pencil"></span> Edit
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Employee>? employees;
+
+    protected override async Task OnInitializedAsync()
+    {
+        employees = await EmployeeService.GetAllEmployeesAsync();
+    }
+}

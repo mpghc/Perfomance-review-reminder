@@ -1,0 +1,155 @@
+@page "/feedback/submit/{reviewId:int}"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject FeedbackService FeedbackService
+@inject PerformanceReviewService ReviewService
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Submit Feedback</PageTitle>
+
+<div class="container mt-4">
+    @if (review == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <h2><span class="bi bi-chat-left-text-fill"></span> Submit Feedback</h2>
+
+        <div class="card mb-3 mt-3">
+            <div class="card-header bg-info text-white">
+                <h5>Review Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Employee:</strong> @review.Employee.FullName</p>
+                <p><strong>Department:</strong> @review.Employee.Department</p>
+                <p><strong>Review Date:</strong> @review.ReviewDate.ToString("yyyy-MM-dd")</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="feedback" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Reviewer *</label>
+                        <InputSelect TValue="int" @@bind-Value="feedback.ReviewerId" class="form-select" required>
+                            <option value="0">-- Select Reviewer --</option>
+                            @if (employees != null)
+                            {
+                                @foreach (var employee in employees)
+                                {
+                                    <option value="@employee.Id">@employee.FullName (@employee.Department)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <InputCheckbox @@bind-Value="feedback.IsManagerFeedback" />
+                            Is Manager Feedback
+                        </label>
+                        <div class="form-text">Check this if you are the employee's direct manager.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Rating (1-5)</label>
+                        <InputSelect TValue="int?" @@bind-Value="feedback.Rating" class="form-select">
+                            <option value="">-- Select Rating --</option>
+                            <option value="1">⭐ 1 - Needs Improvement</option>
+                            <option value="2">⭐⭐ 2 - Below Expectations</option>
+                            <option value="3">⭐⭐⭐ 3 - Meets Expectations</option>
+                            <option value="4">⭐⭐⭐⭐ 4 - Exceeds Expectations</option>
+                            <option value="5">⭐⭐⭐⭐⭐ 5 - Outstanding</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Comments *</label>
+                        <InputTextArea @@bind-Value="feedback.Comments" class="form-control" rows="6" required />
+                        <div class="form-text">Provide specific examples and constructive feedback.</div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                            <span class="bi bi-check-circle"></span> Submit Feedback
+                        </button>
+                        <a href="/reviews/@ReviewId" class="btn btn-secondary ms-2">
+                            <span class="bi bi-x-circle"></span> Cancel
+                        </a>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">@errorMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success mt-3">@successMessage</div>
+                    }
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int ReviewId { get; set; }
+
+    private PerformanceReview? review;
+    private Feedback feedback = new();
+    private List<Employee>? employees;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        review = await ReviewService.GetReviewByIdAsync(ReviewId);
+        employees = await EmployeeService.GetAllEmployeesAsync();
+        feedback.PerformanceReviewId = ReviewId;
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSubmitting = true;
+            errorMessage = null;
+
+            if (feedback.ReviewerId == 0)
+            {
+                errorMessage = "Please select a reviewer.";
+                isSubmitting = false;
+                return;
+            }
+
+            // Check if feedback already submitted
+            var alreadySubmitted = await FeedbackService.HasSubmittedFeedbackAsync(ReviewId, feedback.ReviewerId);
+            if (alreadySubmitted)
+            {
+                errorMessage = "This reviewer has already submitted feedback for this review.";
+                isSubmitting = false;
+                return;
+            }
+
+            feedback.SubmittedDate = DateTime.UtcNow;
+            await FeedbackService.SubmitFeedbackAsync(feedback);
+            
+            successMessage = "Feedback submitted successfully!";
+            await Task.Delay(1500);
+            Navigation.NavigateTo($"/reviews/{ReviewId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error submitting feedback: {ex.Message}";
+            isSubmitting = false;
+        }
+    }
+}

@@ -1,0 +1,128 @@
+@page "/reviews"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject PerformanceReviewService ReviewService
+@rendermode InteractiveServer
+
+<PageTitle>Performance Reviews</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><span class="bi bi-calendar-check-fill"></span> Performance Reviews</h2>
+        <a href="/reviews/schedule" class="btn btn-primary">
+            <span class="bi bi-plus-circle"></span> Schedule Review
+        </a>
+    </div>
+
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link @(selectedTab == "current" ? "active" : "")" 
+               href="#" @onclick='() => SelectTab("current")' @onclick:preventDefault>
+                Current Month
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(selectedTab == "all" ? "active" : "")" 
+               href="#" @onclick='() => SelectTab("all")' @onclick:preventDefault>
+                All Reviews
+            </a>
+        </li>
+    </ul>
+
+    @if (filteredReviews == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else if (!filteredReviews.Any())
+    {
+        <div class="alert alert-info">No reviews found.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Review Date</th>
+                        <th>Status</th>
+                        <th>Manager</th>
+                        <th>Feedbacks</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var review in filteredReviews)
+                    {
+                        <tr>
+                            <td>
+                                <a href="/employees/@review.EmployeeId">@review.Employee.FullName</a>
+                            </td>
+                            <td>@review.ReviewDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                @switch (review.Status)
+                                {
+                                    case ReviewStatus.Scheduled:
+                                        <span class="badge bg-info">Scheduled</span>
+                                        break;
+                                    case ReviewStatus.InProgress:
+                                        <span class="badge bg-warning">In Progress</span>
+                                        break;
+                                    case ReviewStatus.Completed:
+                                        <span class="badge bg-success">Completed</span>
+                                        break;
+                                    case ReviewStatus.Cancelled:
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        break;
+                                }
+                            </td>
+                            <td>@(review.Employee.Manager?.FullName ?? "N/A")</td>
+                            <td>
+                                <span class="badge bg-secondary">@review.Feedbacks.Count</span>
+                            </td>
+                            <td>
+                                <a href="/reviews/@review.Id" class="btn btn-sm btn-info">
+                                    <span class="bi bi-eye"></span> View
+                                </a>
+                                @if (review.Status != ReviewStatus.Completed)
+                                {
+                                    <a href="/feedback/submit/@review.Id" class="btn btn-sm btn-success">
+                                        <span class="bi bi-chat-left-text"></span> Feedback
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PerformanceReview>? allReviews;
+    private List<PerformanceReview>? filteredReviews;
+    private string selectedTab = "current";
+
+    protected override async Task OnInitializedAsync()
+    {
+        allReviews = await ReviewService.GetAllReviewsAsync();
+        await SelectTab("current");
+    }
+
+    private async Task SelectTab(string tab)
+    {
+        selectedTab = tab;
+        
+        if (tab == "current")
+        {
+            filteredReviews = await ReviewService.GetCurrentMonthReviewsAsync();
+        }
+        else
+        {
+            filteredReviews = allReviews;
+        }
+
+        StateHasChanged();
+    }
+}

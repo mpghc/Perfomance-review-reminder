@@ -1,0 +1,175 @@
+@page "/admin"
+@layout AdminLayout
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject PerformanceReviewService ReviewService
+@inject EmployeeService EmployeeService
+@inject ReminderService ReminderService
+@rendermode InteractiveServer
+
+<PageTitle>Admin Dashboard</PageTitle>
+
+<div class="container mt-4">
+    <h2><span class="bi bi-speedometer2"></span> Admin Dashboard</h2>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card border-primary text-center">
+                <div class="card-body">
+                    <h6 class="card-title">Total Employees</h6>
+                    <p class="display-4">@totalEmployees</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-success text-center">
+                <div class="card-body">
+                    <h6 class="card-title">Active Reviews</h6>
+                    <p class="display-4">@activeReviews</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-warning text-center">
+                <div class="card-body">
+                    <h6 class="card-title">Missing Feedback</h6>
+                    <p class="display-4">@missingFeedbackCount</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-info text-center">
+                <div class="card-body">
+                    <h6 class="card-title">Reminders Sent</h6>
+                    <p class="display-4">@totalReminders</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/admin/missing-feedback" class="btn btn-outline-warning">
+                            <span class="bi bi-exclamation-triangle-fill"></span> View Missing Feedback Report
+                        </a>
+                        <a href="/admin/reminder-logs" class="btn btn-outline-info">
+                            <span class="bi bi-bell-fill"></span> View Reminder Logs
+                        </a>
+                        <a href="/admin/employees" class="btn btn-outline-primary">
+                            <span class="bi bi-people-fill"></span> Manage All Employees
+                        </a>
+                        <a href="/admin/reviews" class="btn btn-outline-success">
+                            <span class="bi bi-calendar-check-fill"></span> View All Reviews
+                        </a>
+                        <button class="btn btn-outline-secondary" @onclick="TriggerReminders" disabled="@isProcessing">
+                            <span class="bi bi-arrow-clockwise"></span> @(isProcessing ? "Processing..." : "Trigger Reminders Now")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5>Reviews Needing Attention</h5>
+                </div>
+                <div class="card-body">
+                    @if (reviewsNeedingAttention == null)
+                    {
+                        <p><em>Loading...</em></p>
+                    }
+                    else if (!reviewsNeedingAttention.Any())
+                    {
+                        <div class="alert alert-success">All reviews are on track!</div>
+                    }
+                    else
+                    {
+                        <ul class="list-group">
+                            @foreach (var review in reviewsNeedingAttention.Take(5))
+                            {
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>@review.Employee.FullName</strong><br />
+                                            <small>Due: @review.ReviewDate.ToString("yyyy-MM-dd")</small>
+                                        </div>
+                                        <a href="/reviews/@review.Id" class="btn btn-sm btn-info">View</a>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert alert-info mt-3">@message</div>
+    }
+</div>
+
+@code {
+    private int totalEmployees;
+    private int activeReviews;
+    private int missingFeedbackCount;
+    private int totalReminders;
+    private List<PerformanceReview>? reviewsNeedingAttention;
+    private string? message;
+    private bool isProcessing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardDataAsync();
+    }
+
+    private async Task LoadDashboardDataAsync()
+    {
+        var employees = await EmployeeService.GetAllEmployeesAsync();
+        totalEmployees = employees.Count;
+
+        var currentMonthReviews = await ReviewService.GetCurrentMonthReviewsAsync();
+        activeReviews = currentMonthReviews.Count;
+
+        reviewsNeedingAttention = await ReviewService.GetReviewsWithMissingFeedbackAsync();
+        missingFeedbackCount = reviewsNeedingAttention.Count;
+
+        var logs = await ReminderService.GetReminderLogsAsync();
+        totalReminders = logs.Count;
+    }
+
+    private async Task TriggerReminders()
+    {
+        try
+        {
+            isProcessing = true;
+            message = "Processing reminders...";
+            StateHasChanged();
+
+            await ReminderService.ProcessCurrentMonthRemindersAsync();
+            
+            message = "Reminders processed successfully! Check the Reminder Logs for details.";
+            await LoadDashboardDataAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"Error processing reminders: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}

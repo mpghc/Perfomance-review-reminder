@@ -1,0 +1,121 @@
+@page "/employees/edit/{id:int}"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Employee</PageTitle>
+
+<div class="container mt-4">
+    @if (employee == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <h2><span class="bi bi-pencil-fill"></span> Edit Employee</h2>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <EditForm Model="employee" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger" />
+
+                    <div class="mb-3">
+                        <label class="form-label">First Name *</label>
+                        <InputText @@bind-Value="employee.FirstName" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Last Name *</label>
+                        <InputText @@bind-Value="employee.LastName" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <InputText @@bind-Value="employee.Email" class="form-control" type="email" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Department *</label>
+                        <InputText @@bind-Value="employee.Department" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <InputCheckbox @@bind-Value="employee.IsManager" />
+                            Is Manager
+                        </label>
+                    </div>
+
+                    @if (!employee.IsManager && managers != null && managers.Any())
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Manager</label>
+                            <InputSelect TValue="int?" @@bind-Value="employee.ManagerId" class="form-select">
+                                <option value="">-- Select Manager --</option>
+                                @foreach (var manager in managers.Where(m => m.Id != employee.Id))
+                                {
+                                    <option value="@manager.Id">@manager.FullName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                    }
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="bi bi-check-circle"></span> Save Changes
+                        </button>
+                        <a href="/employees/@employee.Id" class="btn btn-secondary ms-2">
+                            <span class="bi bi-x-circle"></span> Cancel
+                        </a>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">@errorMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success mt-3">@successMessage</div>
+                    }
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Employee? employee;
+    private List<Employee>? managers;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        employee = await EmployeeService.GetEmployeeByIdAsync(Id);
+        managers = await EmployeeService.GetManagersAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            if (employee != null)
+            {
+                await EmployeeService.UpdateEmployeeAsync(employee);
+                successMessage = "Employee updated successfully!";
+                await Task.Delay(1000);
+                Navigation.NavigateTo($"/employees/{employee.Id}");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating employee: {ex.Message}";
+        }
+    }
+}

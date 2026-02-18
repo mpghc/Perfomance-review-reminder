@@ -1,0 +1,118 @@
+@page "/feedback/my-feedback"
+@using PerformanceReviewBot.Services
+@using PerformanceReviewBot.Data.Entities
+@inject FeedbackService FeedbackService
+@inject EmployeeService EmployeeService
+@rendermode InteractiveServer
+
+<PageTitle>My Feedback</PageTitle>
+
+<div class="container mt-4">
+    <h2><span class="bi bi-chat-left-text-fill"></span> My Feedback</h2>
+
+    <div class="alert alert-info mt-3">
+        <strong>Note:</strong> Select your employee profile to view feedback you've submitted.
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Select Your Profile</label>
+                <select class="form-select" @onchange="OnEmployeeSelected">
+                    <option value="0">-- Select Employee --</option>
+                    @if (employees != null)
+                    {
+                        @foreach (var emp in employees)
+                        {
+                            <option value="@emp.Id">@emp.FullName (@emp.Department)</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    @if (feedbacks == null)
+    {
+        <p><em>Select your profile to view your feedback submissions.</em></p>
+    }
+    else if (!feedbacks.Any())
+    {
+        <div class="alert alert-info">You haven't submitted any feedback yet.</div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var feedback in feedbacks)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h6>
+                                Feedback for @feedback.PerformanceReview.Employee.FullName
+                                @if (feedback.IsManagerFeedback)
+                                {
+                                    <span class="badge bg-warning">Manager</span>
+                                }
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Review Date:</strong> @feedback.PerformanceReview.ReviewDate.ToString("yyyy-MM-dd")</p>
+                            <p><strong>Submitted:</strong> @feedback.SubmittedDate.ToString("yyyy-MM-dd HH:mm")</p>
+                            
+                            @if (feedback.Rating.HasValue)
+                            {
+                                <p>
+                                    <strong>Rating:</strong> 
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        @if (i <= feedback.Rating.Value)
+                                        {
+                                            <span class="bi bi-star-fill text-warning"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-star text-muted"></span>
+                                        }
+                                    }
+                                    (@feedback.Rating.Value/5)
+                                </p>
+                            }
+                            
+                            <p><strong>Comments:</strong></p>
+                            <p class="text-muted">@feedback.Comments</p>
+                            
+                            <a href="/reviews/@feedback.PerformanceReviewId" class="btn btn-sm btn-outline-primary">
+                                View Review
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Employee>? employees;
+    private List<Feedback>? feedbacks;
+    private int selectedEmployeeId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        employees = await EmployeeService.GetAllEmployeesAsync();
+    }
+
+    private async Task OnEmployeeSelected(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int employeeId) && employeeId > 0)
+        {
+            selectedEmployeeId = employeeId;
+            feedbacks = await FeedbackService.GetFeedbackByReviewerIdAsync(employeeId);
+        }
+        else
+        {
+            feedbacks = null;
+        }
+    }
+}
