@@ -1,18 +1,20 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace PerformanceReviewReminderBot.Web.Endpoints;
 
 /// <summary>
 /// Request body for creating or updating an employee.
 /// </summary>
-/// <param name="FullName">Full name of the employee. Required.</param>
-/// <param name="Email">Email address of the employee. Required.</param>
+/// <param name="FullName">Full name of the employee. Required, max 200 characters.</param>
+/// <param name="Email">Email address of the employee. Required, max 200 characters, must be a valid email.</param>
 /// <param name="Role">Role within the organization (0 = Employee, 1 = TalentManager).</param>
 /// <param name="TalentManagerId">
 /// FK to the Talent Manager who manages this employee. Null for Talent Managers.
 /// </param>
 public record EmployeeRequest(
-    string FullName,
-    string Email,
-    int Role,
+    [property: Required][property: MaxLength(200)] string FullName,
+    [property: Required][property: MaxLength(200)][property: EmailAddress] string Email,
+    [property: Range(0, 1)] int Role,
     int? TalentManagerId);
 
 /// <summary>
@@ -83,10 +85,10 @@ public record StatusUpdateRequest(
 /// Request body for submitting peer feedback.
 /// </summary>
 /// <param name="AuthorId">The Id of the teammate submitting the feedback.</param>
-/// <param name="Content">Text content of the feedback.</param>
+/// <param name="Content">Text content of the feedback. Required, max 4000 characters.</param>
 public record FeedbackRequest(
     int AuthorId,
-    string Content);
+    [property: Required][property: MaxLength(4000)] string Content);
 
 /// <summary>
 /// Response DTO for a feedback submission.

@@ -18,7 +18,7 @@ public static class FeedbackEndpoints
             .WithTags("Feedback");
 
         group.MapGet("/", GetByReviewAsync);
-        group.MapPost("/", SubmitAsync);
+        group.MapPost("/", SubmitAsync).AddEndpointFilter<ValidationFilter<FeedbackRequest>>();
     }
 
     /// <summary>

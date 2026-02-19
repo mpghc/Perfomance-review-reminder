@@ -19,8 +19,8 @@ public static class EmployeeEndpoints
 
         group.MapGet("/", GetAllAsync);
         group.MapGet("/{id:int}", GetByIdAsync);
-        group.MapPost("/", CreateAsync);
-        group.MapPut("/{id:int}", UpdateAsync);
+        group.MapPost("/", CreateAsync).AddEndpointFilter<ValidationFilter<EmployeeRequest>>();
+        group.MapPut("/{id:int}", UpdateAsync).AddEndpointFilter<ValidationFilter<EmployeeRequest>>();
         group.MapDelete("/{id:int}", DeleteAsync);
 
         group.MapGet("/{id:int}/teammates", GetTeammatesAsync);
@@ -73,6 +73,12 @@ public static class EmployeeEndpoints
     {
         try
         {
+            // Guard against out-of-range enum values that pass integer deserialisation.
+            if (!Enum.IsDefined(typeof(EmployeeRole), request.Role))
+            {
+                return Results.BadRequest(new { message = $"Invalid Role value '{request.Role}'." });
+            }
+
             var employee = new Employee
             {
                 FullName = request.FullName,
@@ -102,6 +108,12 @@ public static class EmployeeEndpoints
     {
         try
         {
+            // Guard against out-of-range enum values that pass integer deserialisation.
+            if (!Enum.IsDefined(typeof(EmployeeRole), request.Role))
+            {
+                return Results.BadRequest(new { message = $"Invalid Role value '{request.Role}'." });
+            }
+
             var employee = new Employee
             {
                 Id = id,
