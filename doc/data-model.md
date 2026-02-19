@@ -3,17 +3,27 @@
 ## Entity Relationship Diagram
 
 ```
-┌──────────────┐       ┌──────────────┐
-│   Employee   │ N───1 │     Team     │
-├──────────────┤       ├──────────────┤
-│ Id           │       │ Id           │
-│ FullName     │       │ Name         │
-│ Email        │       │ ManagerId(FK)│──┐
-│ Role (enum)  │       └──────────────┘  │
-│ TeamId (FK)  │                         │
-└──────┬───────┘         1───────────────┘
-       │                 (Employee is manager)
+┌─────────────────────┐
+│      Employee       │
+├─────────────────────┤
+│ Id                  │
+│ FullName            │
+│ Email               │
+│ Role (enum)         │  ← TalentManager / Employee
+│ TalentManagerId(FK?)│──┐  (null for TalentManagers)
+└──────┬──────────────┘  │
+       │                 │ 1 (self-ref: TM has many Employees)
+       │                 └──────────────────────────────────┘
        │
+       │ N───N  (teammates, self-referencing many-to-many)
+       ▼
+┌─────────────────────┐
+│  EmployeeTeammate   │  ← join table
+├─────────────────────┤
+│ EmployeeId (FK)     │
+│ TeammateId (FK)     │
+└─────────────────────┘
+
        │ 1
        ▼
 ┌──────────────────┐
@@ -34,7 +44,7 @@
 ├──────────────────┤
 │ Id               │
 │ ReviewId (FK)    │  ← which review this is for
-│ AuthorId (FK)    │  ← Employee who writes the feedback
+│ AuthorId (FK)    │  ← teammate who writes the feedback
 │ Content          │  ← text feedback
 │ SubmittedAt      │
 └──────────────────┘
@@ -62,15 +72,16 @@
 | FullName | string | Required, max 200 |
 | Email | string | Required, max 200 |
 | Role | enum | `TalentManager`, `Employee` |
-| TeamId | int? (FK) | Nullable — a Talent Manager may oversee a team without being a member |
+| TalentManagerId | int? (FK) | Self-ref to Employee. Null for Talent Managers. Points to the TM who manages this employee. |
 
-### Team
+### EmployeeTeammate (Join Table)
 
 | Column | Type | Notes |
 |---|---|---|
-| Id | int (PK) | Auto-increment |
-| Name | string | Required, max 100 |
-| ManagerId | int (FK) | Points to an Employee with Role = TalentManager |
+| EmployeeId | int (PK, FK) | One side of the teammate relationship |
+| TeammateId | int (PK, FK) | Other side of the teammate relationship |
+
+**Constraint**: Composite PK on (EmployeeId, TeammateId). The relationship is **bidirectional** — if Alice is Tom's teammate, Tom is Alice's teammate. The app ensures both rows exist.
 
 ### PerformanceReview
 
@@ -112,8 +123,8 @@ The app ships with pre-loaded data so it's usable immediately:
 
 | Entity | Seed Examples |
 |---|---|
-| Employees | Bill (Talent Manager), Tom, Bob, Carol, Alice (Employees) |
-| Teams | "Engineering" — Talent Manager: Bill, Members: Tom, Bob, Carol, Alice |
+| Employees | Bill (Talent Manager), Tom, Bob, Carol, Alice (Employees managed by Bill) |
+| Teammates | Tom ↔ Bob, Tom ↔ Carol, Tom ↔ Alice, Bob ↔ Carol, Bob ↔ Alice, Carol ↔ Alice |
 | Reviews | Tom's review scheduled 14 days from now |
 | Notifications | A few sample reminders already created |
 
