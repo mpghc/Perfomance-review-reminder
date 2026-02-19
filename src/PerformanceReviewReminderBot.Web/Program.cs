@@ -42,6 +42,9 @@ if (!app.Environment.IsDevelopment())
 app.UseAntiforgery();
 
 app.MapEmployeeEndpoints();
+app.MapReviewEndpoints();
+app.MapFeedbackEndpoints();
+app.MapNotificationEndpoints();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
