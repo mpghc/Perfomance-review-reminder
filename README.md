@@ -18,6 +18,7 @@ A bot that checks who has performance reviews this month, sends reminders to tea
 - [Data Model](doc/data-model.md) — entities, relationships, seed data
 - [Architecture](doc/architecture.md) — solution structure, routing, API, testing strategy
 - [Implementation Plan](doc/implementation-plan.md) — 14 iteration stages from scaffolding to polish
+- [Prompts Log](PromptsLog.md) — record of AI-assisted development prompts and decisions
 
 ## Prerequisites
 
