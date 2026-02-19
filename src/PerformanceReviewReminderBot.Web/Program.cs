@@ -20,6 +20,7 @@ builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<ReminderService>();
+builder.Services.AddHostedService<ReminderBackgroundService>();
 
 var app = builder.Build();
 
