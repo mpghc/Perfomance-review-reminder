@@ -5,6 +5,7 @@
 @rendermode InteractiveServer
 @inject AppDbContext DbContext
 @inject CurrentUserService CurrentUser
+@inject NavigationManager Navigation
 
 <div class="d-flex align-items-center gap-2">
     <select class="form-select form-select-sm" style="width: auto;"
@@ -38,6 +39,7 @@
         if (int.TryParse(e.Value?.ToString(), out var employeeId))
         {
             await CurrentUser.SetCurrentUserAsync(employeeId);
+            Navigation.NavigateTo("/", forceLoad: false);
         }
     }
 }

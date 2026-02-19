@@ -17,7 +17,7 @@ A bot that checks who has performance reviews this month, sends reminders to tea
 - [Requirements & User Stories](doc/requirements.md) — functional/non-functional requirements
 - [Data Model](doc/data-model.md) — entities, relationships, seed data
 - [Architecture](doc/architecture.md) — solution structure, routing, API, testing strategy
-- [Implementation Plan](doc/implementation-plan.md) — 14 iteration stages from scaffolding to polish
+- [Implementation Plan](doc/implementation-plan.md) — 17 iteration stages from scaffolding to polish
 - [Prompts Log](PromptsLog.md) — record of AI-assisted development prompts and decisions
 
 ## Prerequisites
@@ -49,8 +49,71 @@ A bot that checks who has performance reviews this month, sends reminders to tea
 ## Quick Start
 
 ```bash
+# Clone and navigate to the project
+git clone https://github.com/mpghc/SkillMiner.git
+cd SkillMiner
+
+# Run the web application
 cd src/PerformanceReviewReminderBot.Web
 dotnet run
 ```
 
 Open <http://localhost:5064> in your browser.
+
+The database is created automatically on first run with seed data:
+- **Bill** (Talent Manager) — manages Tom, Alice, Bob, Carol
+- **Tom, Alice, Bob, Carol** (Employees) — with bidirectional teammate relationships
+- **1 scheduled review** for Tom (14 days out)
+- **2 notifications** for Alice and Bob
+
+Use the **role switcher** dropdown in the sidebar to switch between users.
+
+## Run Tests
+
+```bash
+dotnet test
+```
+
+97 tests (unit + integration) covering services, reminder logic, and all 16 API endpoints.
+
+## API Endpoints
+
+All endpoints are available at `http://localhost:5064/api/`.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/employees` | List all employees |
+| `GET` | `/api/employees/{id}` | Get employee by Id |
+| `POST` | `/api/employees` | Create employee |
+| `PUT` | `/api/employees/{id}` | Update employee |
+| `DELETE` | `/api/employees/{id}` | Delete employee |
+| `GET` | `/api/employees/{id}/teammates` | List teammates |
+| `POST` | `/api/employees/{id}/teammates` | Add teammate (bidirectional) |
+| `DELETE` | `/api/employees/{employeeId}/teammates/{teammateId}` | Remove teammate (bidirectional) |
+| `GET` | `/api/reviews?managerId={id}` | List reviews by manager |
+| `GET` | `/api/reviews/{id}` | Get review by Id |
+| `POST` | `/api/reviews` | Schedule a review |
+| `PATCH` | `/api/reviews/{id}/status` | Update review status |
+| `GET` | `/api/reviews/{id}/feedback` | List feedback for review |
+| `POST` | `/api/reviews/{id}/feedback` | Submit feedback |
+| `GET` | `/api/notifications?recipientId={id}` | List notifications |
+| `PATCH` | `/api/notifications/{id}/read` | Mark notification as read |
+
+## Project Structure
+
+```
+src/
+  PerformanceReviewReminderBot.Web/
+    Data/                  # DbContext, migrations, seed data
+    Entities/              # Domain entities & enums
+    Services/              # Business logic services
+    Endpoints/             # Minimal API endpoint mappings
+    Components/
+      Layout/              # MainLayout, AdminLayout, NavMenu
+      Pages/               # Blazor pages (Home, Dashboard, Admin, Reviews, Feedback, Notifications)
+      Shared/              # Shared components (RoleSwitcher, NotificationBadge)
+tests/
+  PerformanceReviewReminderBot.Tests/
+    Services/              # Unit tests for all services
+    Endpoints/             # Integration tests for API endpoints
+```

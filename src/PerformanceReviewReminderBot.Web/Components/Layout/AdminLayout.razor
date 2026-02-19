@@ -1,19 +1,52 @@
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
 @inherits LayoutComponentBase
+@inject CurrentUserService CurrentUser
 
-<div class="page">
-    <div class="sidebar">
-        <AdminNavMenu />
+@if (CurrentUser.CurrentUserRole != EmployeeRole.TalentManager)
+{
+    <div class="container mt-4">
+        <div class="alert alert-danger">Access Denied — Admin area is available to Talent Managers only.</div>
+        <a href="" class="btn btn-outline-primary">Back to Home</a>
     </div>
+}
+else
+{
+    <div class="page">
+        <div class="sidebar">
+            <AdminNavMenu />
+        </div>
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+        <main>
+            <article class="content px-4">
+                <ErrorBoundary @ref="errorBoundary">
+                    <ChildContent>
+                        @Body
+                    </ChildContent>
+                    <ErrorContent>
+                        <div class="alert alert-danger mt-3" role="alert">
+                            <h4 class="alert-heading">Something went wrong</h4>
+                            <p>An unexpected error occurred. Please try again.</p>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="Recover">Recover</button>
+                        </div>
+                    </ErrorContent>
+                </ErrorBoundary>
+            </article>
+        </main>
+    </div>
+}
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    private void Recover()
+    {
+        errorBoundary?.Recover();
+    }
+}

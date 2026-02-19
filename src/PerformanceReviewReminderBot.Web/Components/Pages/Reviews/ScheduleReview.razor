@@ -10,6 +10,13 @@
 
 <h1>Schedule Review</h1>
 
+@if (CurrentUser.CurrentUserRole != EmployeeRole.TalentManager)
+{
+    <div class="alert alert-danger">Access Denied — Scheduling reviews is available to Talent Managers only.</div>
+}
+else
+{
+
 @if (!string.IsNullOrEmpty(errorMessage))
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -50,6 +57,7 @@ else
             </div>
         </div>
     </div>
+}
 }
 
 @code {

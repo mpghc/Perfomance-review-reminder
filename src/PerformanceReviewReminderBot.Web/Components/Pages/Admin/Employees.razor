@@ -27,7 +27,7 @@
 }
 
 <div class="mb-3">
-    <a href="admin/employees/new" class="btn btn-primary">Add Employee</a>
+    <a href="/admin/employees/new" class="btn btn-primary">Add Employee</a>
 </div>
 
 @if (employees is null)
@@ -59,7 +59,7 @@ else
                     </td>
                     <td>@(employee.TalentManager?.FullName ?? "—")</td>
                     <td>
-                        <a href="admin/employees/@employee.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                        <a href="/admin/employees/@employee.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
                         @if (confirmDeleteId == employee.Id)
                         {
                             <button class="btn btn-sm btn-danger me-1" @onclick="() => DeleteEmployee(employee.Id)">Confirm</button>

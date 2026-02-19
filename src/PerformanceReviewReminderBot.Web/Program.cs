@@ -19,6 +19,8 @@ builder.Services.AddScoped<TeammateService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<ReminderService>();
+builder.Services.AddHostedService<ReminderBackgroundService>();
 
 var app = builder.Build();
 
@@ -40,6 +42,9 @@ if (!app.Environment.IsDevelopment())
 app.UseAntiforgery();
 
 app.MapEmployeeEndpoints();
+app.MapReviewEndpoints();
+app.MapFeedbackEndpoints();
+app.MapNotificationEndpoints();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

@@ -1,7 +1,106 @@
 ﻿@page "/"
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@implements IDisposable
+@rendermode InteractiveServer
+@inject CurrentUserService CurrentUser
+@inject ReviewService ReviewService
+@inject FeedbackService FeedbackService
 
 <PageTitle>Home — ReviewPulse</PageTitle>
 
-<h1>Home</h1>
+<h1>Welcome to ReviewPulse</h1>
 
-<p>Welcome to ReviewPulse — Performance Review Reminder Bot.</p>
+<p class="lead">Performance Review Reminder Bot</p>
+
+@if (CurrentUser.CurrentUserRole == EmployeeRole.TalentManager)
+{
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-bg-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Upcoming Reviews</h5>
+                    <p class="card-text display-6">@upcomingCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-bg-danger mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Overdue</h5>
+                    <p class="card-text display-6">@overdueCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+}
+else
+{
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-bg-warning mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Feedback</h5>
+                    <p class="card-text display-6">@pendingFeedbackCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <a href="/feedback" class="btn btn-warning">View Pending Feedback</a>
+}
+
+@code {
+    private int upcomingCount;
+    private int overdueCount;
+    private int pendingFeedbackCount;
+
+    protected override void OnInitialized()
+    {
+        CurrentUser.OnChange += OnCurrentUserChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (CurrentUser.CurrentUserRole == EmployeeRole.TalentManager)
+        {
+            var reviews = await ReviewService.GetByManagerAsync(CurrentUser.CurrentUserId);
+            upcomingCount = reviews.Count(r => r.Status != ReviewStatus.Completed);
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            overdueCount = reviews.Count(r =>
+                r.Status != ReviewStatus.Completed
+                && r.ReviewDate.DayNumber - today.DayNumber <= 3
+                && r.Feedbacks.Count < r.Employee.EmployeeTeammates.Count);
+
+            pendingFeedbackCount = 0;
+        }
+        else
+        {
+            var pending = await FeedbackService.GetPendingForUserAsync(CurrentUser.CurrentUserId);
+            pendingFeedbackCount = pending.Count;
+
+            upcomingCount = 0;
+            overdueCount = 0;
+        }
+    }
+
+    private async void OnCurrentUserChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadDataAsync();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        CurrentUser.OnChange -= OnCurrentUserChanged;
+    }
+}

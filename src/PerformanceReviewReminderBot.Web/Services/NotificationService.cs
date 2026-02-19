@@ -75,7 +75,8 @@ public class NotificationService(AppDbContext context)
         int recipientId,
         int? reviewId,
         NotificationType type,
-        string message)
+        string message,
+        DateTime? createdAt = null)
     {
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -96,7 +97,7 @@ public class NotificationService(AppDbContext context)
             Type = type,
             Message = message,
             IsRead = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = createdAt ?? DateTime.UtcNow
         };
 
         _context.Notifications.Add(notification);
