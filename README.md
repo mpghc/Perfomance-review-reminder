@@ -23,6 +23,6 @@ A bot that checks who has performance reviews this month, sends reminders to tea
 
 ```bash
 # (coming soon — once the project is scaffolded)
-cd src/SkillMiner.Web
+cd src/PerformanceReviewReminderBot.Web
 dotnet run
 ```

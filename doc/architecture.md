@@ -5,9 +5,9 @@
 Two projects — one web app, one test project. No extra class libraries; everything lives in the web project organized by folders.
 
 ```
-SkillMiner.slnx
+PerformanceReviewReminderBot.slnx
 ├── src/
-│   └── SkillMiner.Web/              ← Blazor Server + Minimal API + EF Core
+│   └── PerformanceReviewReminderBot.Web/              ← Blazor Server + Minimal API + EF Core
 │       ├── Components/
 │       │   ├── Layout/
 │       │   │   ├── MainLayout.razor        ← default layout (nav + header + role switcher)
@@ -55,7 +55,7 @@ SkillMiner.slnx
 │       ├── Program.cs
 │       └── appsettings.json
 └── tests/
-    └── SkillMiner.Web.Tests/
+    └── PerformanceReviewReminderBot.Web.Tests/
         ├── Services/
         │   ├── EmployeeServiceTests.cs
         │   ├── ReviewServiceTests.cs
