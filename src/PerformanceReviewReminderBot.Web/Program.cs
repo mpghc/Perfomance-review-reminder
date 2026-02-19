@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<CurrentUserService>();
 builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<TeammateService>();
 
 var app = builder.Build();
 
