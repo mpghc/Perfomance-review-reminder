@@ -1,0 +1,88 @@
+@page "/feedback/{ReviewId:int}"
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject FeedbackService FeedbackService
+@inject ReviewService ReviewService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Navigation
+
+<PageTitle>Submit Feedback — ReviewPulse</PageTitle>
+
+<h1>Submit Feedback</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+@if (review is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card" style="max-width: 600px;">
+        <div class="card-header">
+            <strong>Review for @review.Employee.FullName</strong> — @review.ReviewDate.ToString("yyyy-MM-dd")
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="feedbackContent" class="form-label">Your Feedback</label>
+                <textarea id="feedbackContent" class="form-control" rows="6"
+                          @bind="feedbackContent" placeholder="Write your feedback here..."></textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="HandleSubmitAsync" disabled="@isSubmitting">
+                    @(isSubmitting ? "Submitting..." : "Submit Feedback")
+                </button>
+                <a href="/feedback" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>The review to submit feedback for.</summary>
+    [Parameter]
+    public int ReviewId { get; set; }
+
+    private PerformanceReview? review;
+    private string feedbackContent = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        review = await ReviewService.GetByIdAsync(ReviewId);
+
+        if (review is null)
+        {
+            errorMessage = "Review not found.";
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = string.Empty;
+        isSubmitting = true;
+
+        try
+        {
+            await FeedbackService.SubmitAsync(ReviewId, CurrentUser.CurrentUserId, feedbackContent);
+            Navigation.NavigateTo("/feedback");
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

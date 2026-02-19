@@ -1,0 +1,43 @@
+@using Microsoft.EntityFrameworkCore
+@using PerformanceReviewReminderBot.Web.Data
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject AppDbContext DbContext
+@inject CurrentUserService CurrentUser
+
+<div class="d-flex align-items-center gap-2">
+    <select class="form-select form-select-sm" style="width: auto;"
+            value="@CurrentUser.CurrentUserId"
+            @onchange="OnUserChanged">
+        @foreach (var employee in employees)
+        {
+            <option value="@employee.Id">@employee.FullName</option>
+        }
+    </select>
+    <span class="badge @RoleBadgeClass">@CurrentUser.CurrentUserRole</span>
+</div>
+
+@code {
+    private List<Employee> employees = [];
+
+    private string RoleBadgeClass => CurrentUser.CurrentUserRole == EmployeeRole.TalentManager
+        ? "bg-warning text-dark"
+        : "bg-info text-dark";
+
+    protected override async Task OnInitializedAsync()
+    {
+        employees = await DbContext.Employees
+            .AsNoTracking()
+            .OrderBy(e => e.FullName)
+            .ToListAsync();
+    }
+
+    private async Task OnUserChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var employeeId))
+        {
+            await CurrentUser.SetCurrentUserAsync(employeeId);
+        }
+    }
+}

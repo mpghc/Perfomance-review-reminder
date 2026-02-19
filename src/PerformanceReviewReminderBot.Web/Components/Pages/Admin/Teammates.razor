@@ -1,0 +1,175 @@
+@page "/admin/teammates"
+@layout PerformanceReviewReminderBot.Web.Components.Layout.AdminLayout
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject TeammateService TeammateService
+@inject EmployeeService EmployeeService
+
+<PageTitle>Teammates — Admin — ReviewPulse</PageTitle>
+
+<h1>Teammates</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+    </div>
+}
+
+<div class="mb-3">
+    <label for="employeeSelect" class="form-label fw-bold">Select Employee</label>
+    <select id="employeeSelect" class="form-select" style="max-width: 300px;"
+            value="@selectedEmployeeId"
+            @onchange="OnEmployeeSelected">
+        <option value="0">— Select an employee —</option>
+        @foreach (var emp in employees)
+        {
+            <option value="@emp.Id">@emp.FullName</option>
+        }
+    </select>
+</div>
+
+@if (selectedEmployeeId > 0)
+{
+    <h4 class="mt-4">Current Teammates</h4>
+
+    @if (teammates.Count == 0)
+    {
+        <p class="text-muted">No teammates assigned yet.</p>
+    }
+    else
+    {
+        <ul class="list-group mb-3" style="max-width: 400px;">
+            @foreach (var teammate in teammates)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @teammate.FullName
+                    <button class="btn btn-sm btn-outline-danger"
+                            @onclick="() => RemoveTeammate(teammate.Id)">
+                        Remove
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+
+    <h4 class="mt-4">Add Teammate</h4>
+
+    @if (eligibleTeammates.Count == 0)
+    {
+        <p class="text-muted">No eligible teammates available.</p>
+    }
+    else
+    {
+        <div class="d-flex gap-2 align-items-end" style="max-width: 400px;">
+            <select class="form-select" @bind="selectedTeammateId">
+                <option value="0">— Select —</option>
+                @foreach (var eligible in eligibleTeammates)
+                {
+                    <option value="@eligible.Id">@eligible.FullName</option>
+                }
+            </select>
+            <button class="btn btn-primary" @onclick="AddTeammate"
+                    disabled="@(selectedTeammateId == 0)">
+                Add
+            </button>
+        </div>
+    }
+}
+
+@code {
+    private List<Employee> employees = [];
+    private List<Employee> teammates = [];
+    private List<Employee> eligibleTeammates = [];
+    private int selectedEmployeeId;
+    private int selectedTeammateId;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allEmployees = await EmployeeService.GetAllAsync();
+        employees = allEmployees
+            .Where(e => e.Role == EmployeeRole.Employee)
+            .ToList();
+    }
+
+    private async Task OnEmployeeSelected(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id))
+        {
+            selectedEmployeeId = id;
+        }
+        else
+        {
+            selectedEmployeeId = 0;
+        }
+
+        selectedTeammateId = 0;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        await LoadTeammateData();
+    }
+
+    private async Task LoadTeammateData()
+    {
+        if (selectedEmployeeId > 0)
+        {
+            teammates = await TeammateService.GetTeammatesAsync(selectedEmployeeId);
+            eligibleTeammates = await TeammateService.GetEligibleTeammatesAsync(selectedEmployeeId);
+        }
+        else
+        {
+            teammates = [];
+            eligibleTeammates = [];
+        }
+    }
+
+    private async Task AddTeammate()
+    {
+        if (selectedTeammateId == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            await TeammateService.AddTeammateAsync(selectedEmployeeId, selectedTeammateId);
+            successMessage = "Teammate added successfully.";
+            errorMessage = string.Empty;
+            selectedTeammateId = 0;
+            await LoadTeammateData();
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+            successMessage = string.Empty;
+        }
+    }
+
+    private async Task RemoveTeammate(int teammateId)
+    {
+        try
+        {
+            await TeammateService.RemoveTeammateAsync(selectedEmployeeId, teammateId);
+            successMessage = "Teammate removed successfully.";
+            errorMessage = string.Empty;
+            await LoadTeammateData();
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+            successMessage = string.Empty;
+        }
+    }
+}

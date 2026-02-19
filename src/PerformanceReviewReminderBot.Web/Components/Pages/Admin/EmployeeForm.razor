@@ -1,0 +1,154 @@
+@page "/admin/employees/new"
+@page "/admin/employees/{Id:int}"
+@layout PerformanceReviewReminderBot.Web.Components.Layout.AdminLayout
+@using System.ComponentModel.DataAnnotations
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+
+<PageTitle>@(Id.HasValue ? "Edit Employee" : "New Employee") — Admin — ReviewPulse</PageTitle>
+
+<h1>@(Id.HasValue ? "Edit Employee" : "New Employee")</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+<EditForm Model="model" OnValidSubmit="HandleSubmit" FormName="EmployeeForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="mb-3">
+        <label for="fullName" class="form-label">Full Name</label>
+        <InputText id="fullName" class="form-control" @bind-Value="model.FullName" />
+        <ValidationMessage For="() => model.FullName" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <InputText id="email" class="form-control" @bind-Value="model.Email" />
+        <ValidationMessage For="() => model.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label for="role" class="form-label">Role</label>
+        <InputSelect id="role" class="form-select" @bind-Value="model.Role">
+            @foreach (var role in Enum.GetValues<EmployeeRole>())
+            {
+                <option value="@role">@role</option>
+            }
+        </InputSelect>
+    </div>
+
+    @if (model.Role == EmployeeRole.Employee)
+    {
+        <div class="mb-3">
+            <label for="talentManager" class="form-label">Talent Manager</label>
+            <InputSelect id="talentManager" class="form-select" @bind-Value="model.TalentManagerId">
+                <option value="">— Select —</option>
+                @foreach (var tm in talentManagers)
+                {
+                    <option value="@tm.Id">@tm.FullName</option>
+                }
+            </InputSelect>
+        </div>
+    }
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">@(Id.HasValue ? "Save Changes" : "Create")</button>
+        <a href="admin/employees" class="btn btn-secondary">Cancel</a>
+    </div>
+</EditForm>
+
+@code {
+    /// <summary>The employee Id for edit mode; null for create mode.</summary>
+    [Parameter]
+    public int? Id { get; set; }
+
+    private EmployeeFormModel model = new();
+    private List<Employee> talentManagers = [];
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        talentManagers = await EmployeeService.GetTalentManagersAsync();
+
+        if (Id.HasValue)
+        {
+            var employee = await EmployeeService.GetByIdAsync(Id.Value);
+
+            if (employee is null)
+            {
+                Navigation.NavigateTo("admin/employees");
+
+                return;
+            }
+
+            model = new EmployeeFormModel
+            {
+                FullName = employee.FullName,
+                Email = employee.Email,
+                Role = employee.Role,
+                TalentManagerId = employee.TalentManagerId
+            };
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            if (Id.HasValue)
+            {
+                var employee = new Employee
+                {
+                    Id = Id.Value,
+                    FullName = model.FullName,
+                    Email = model.Email,
+                    Role = model.Role,
+                    TalentManagerId = model.Role == EmployeeRole.Employee ? model.TalentManagerId : null
+                };
+                await EmployeeService.UpdateAsync(employee);
+            }
+            else
+            {
+                var employee = new Employee
+                {
+                    FullName = model.FullName,
+                    Email = model.Email,
+                    Role = model.Role,
+                    TalentManagerId = model.Role == EmployeeRole.Employee ? model.TalentManagerId : null
+                };
+                await EmployeeService.CreateAsync(employee);
+            }
+
+            Navigation.NavigateTo("admin/employees");
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Form model with DataAnnotations validation for the employee form.
+    /// </summary>
+    private sealed class EmployeeFormModel
+    {
+        [Required(ErrorMessage = "Full Name is required.")]
+        [StringLength(200, ErrorMessage = "Full Name cannot exceed 200 characters.")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email address.")]
+        [StringLength(200, ErrorMessage = "Email cannot exceed 200 characters.")]
+        public string Email { get; set; } = string.Empty;
+
+        public EmployeeRole Role { get; set; } = EmployeeRole.Employee;
+
+        public int? TalentManagerId { get; set; }
+    }
+}

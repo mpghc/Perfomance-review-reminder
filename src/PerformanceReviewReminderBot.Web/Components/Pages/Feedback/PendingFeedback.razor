@@ -1,0 +1,66 @@
+@page "/feedback"
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject FeedbackService FeedbackService
+@inject CurrentUserService CurrentUser
+
+<PageTitle>Pending Feedback — ReviewPulse</PageTitle>
+
+<h1>Pending Feedback</h1>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+    </div>
+}
+
+@if (pendingReviews is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (pendingReviews.Count == 0)
+{
+    <p class="text-muted">No pending feedback requests. You're all caught up!</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Review Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var review in pendingReviews)
+            {
+                <tr>
+                    <td>@review.Employee.FullName</td>
+                    <td>@review.ReviewDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <a href="/feedback/@review.Id" class="btn btn-sm btn-primary">Submit Feedback</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PerformanceReview>? pendingReviews;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPendingAsync();
+    }
+
+    private async Task LoadPendingAsync()
+    {
+        pendingReviews = await FeedbackService.GetPendingForUserAsync(CurrentUser.CurrentUserId);
+    }
+}

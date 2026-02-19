@@ -1,0 +1,49 @@
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject NotificationService NotificationService
+@inject CurrentUserService CurrentUser
+@implements IDisposable
+
+<a href="/notifications" style="text-decoration: none;">
+    <span class="badge bg-secondary position-relative" title="Notifications">
+        🔔
+        @if (unreadCount > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style="font-size: 0.6rem;">
+                @unreadCount
+            </span>
+        }
+    </span>
+</a>
+
+@code {
+    private int unreadCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser.OnChange += StateHasChanged;
+        await RefreshCountAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await RefreshCountAsync();
+        StateHasChanged();
+    }
+
+    private async Task RefreshCountAsync()
+    {
+        unreadCount = await NotificationService.GetUnreadCountAsync(CurrentUser.CurrentUserId);
+    }
+
+    public void Dispose()
+    {
+        CurrentUser.OnChange -= StateHasChanged;
+    }
+}
