@@ -19,6 +19,7 @@ builder.Services.AddScoped<TeammateService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<ReminderService>();
 
 var app = builder.Build();
 
