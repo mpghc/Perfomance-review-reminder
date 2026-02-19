@@ -1,7 +1,174 @@
 @page "/dashboard"
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@implements IDisposable
+@rendermode InteractiveServer
+@inject ReviewService ReviewService
+@inject CurrentUserService CurrentUser
 
 <PageTitle>Dashboard — ReviewPulse</PageTitle>
 
 <h1>Dashboard</h1>
 
-<p>Talent Manager dashboard — coming soon.</p>
+@if (CurrentUser.CurrentUserRole != EmployeeRole.TalentManager)
+{
+    <div class="alert alert-danger">Access Denied — Dashboard is available to Talent Managers only.</div>
+}
+else if (reviews is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (reviews.Count == 0)
+{
+    <p class="text-muted">No upcoming reviews found for your employees.</p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Review Date</th>
+                <th>Status</th>
+                <th>Feedback Progress</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var review in reviews)
+            {
+                var teammateCount = review.Employee.EmployeeTeammates.Count;
+                var submittedCount = review.Feedbacks.Count;
+                var isOverdue = IsOverdue(review);
+
+                <tr class="@(isOverdue ? "table-danger" : "")">
+                    <td>@review.Employee.FullName</td>
+                    <td>
+                        @review.ReviewDate.ToString("yyyy-MM-dd")
+                        @if (isOverdue)
+                        {
+                            <span class="badge bg-danger ms-1">Overdue</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge @GetStatusBadgeClass(review.Status)">@review.Status</span>
+                    </td>
+                    <td>
+                        @submittedCount / @teammateCount submitted
+                        @if (teammateCount > 0)
+                        {
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar @(isOverdue ? "bg-danger" : "bg-success")"
+                                     role="progressbar"
+                                     style="width: @(teammateCount > 0 ? (int)(100.0 * submittedCount / teammateCount) : 0)%">
+                                </div>
+                            </div>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary"
+                                @onclick="() => ToggleDetails(review.Id)">
+                            @(expandedReviewId == review.Id ? "Hide" : "Details")
+                        </button>
+                    </td>
+                </tr>
+                @if (expandedReviewId == review.Id)
+                {
+                    <tr>
+                        <td colspan="5" class="bg-light">
+                            <strong>Teammate Feedback:</strong>
+                            <ul class="list-unstyled mb-0 mt-1">
+                                @foreach (var et in review.Employee.EmployeeTeammates)
+                                {
+                                    var submitted = review.Feedbacks.Any(f => f.AuthorId == et.TeammateId);
+                                    <li>
+                                        @if (submitted)
+                                        {
+                                            <span class="text-success">✓</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger">✗</span>
+                                        }
+                                        Teammate #@et.TeammateId
+                                    </li>
+                                }
+                            </ul>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PerformanceReview>? reviews;
+    private int? expandedReviewId;
+
+    protected override void OnInitialized()
+    {
+        CurrentUser.OnChange += OnCurrentUserChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (CurrentUser.CurrentUserRole == EmployeeRole.TalentManager)
+        {
+            reviews = await ReviewService.GetByManagerAsync(CurrentUser.CurrentUserId);
+        }
+        else
+        {
+            reviews = null;
+        }
+
+        expandedReviewId = null;
+    }
+
+    private async void OnCurrentUserChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadDataAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void ToggleDetails(int reviewId)
+    {
+        expandedReviewId = expandedReviewId == reviewId ? null : reviewId;
+    }
+
+    public void Dispose()
+    {
+        CurrentUser.OnChange -= OnCurrentUserChanged;
+    }
+
+    private bool IsOverdue(PerformanceReview review)
+    {
+        if (review.Status == ReviewStatus.Completed)
+        {
+            return false;
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var daysUntilReview = review.ReviewDate.DayNumber - today.DayNumber;
+        var teammateCount = review.Employee.EmployeeTeammates.Count;
+        var submittedCount = review.Feedbacks.Count;
+
+        return daysUntilReview <= 3 && submittedCount < teammateCount;
+    }
+
+    private static string GetStatusBadgeClass(ReviewStatus status) => status switch
+    {
+        ReviewStatus.Scheduled => "bg-primary",
+        ReviewStatus.InProgress => "bg-warning text-dark",
+        ReviewStatus.Completed => "bg-success",
+        _ => "bg-secondary"
+    };
+}
