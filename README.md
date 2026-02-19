@@ -16,6 +16,7 @@ A bot that checks who has performance reviews this month, sends reminders to tea
 - [Project Overview](doc/overview.md) — what and why
 - [Requirements & User Stories](doc/requirements.md) — functional/non-functional requirements
 - [Data Model](doc/data-model.md) — entities, relationships, seed data
+- [Architecture](doc/architecture.md) — solution structure, routing, API, testing strategy
 
 ## Quick Start
 
