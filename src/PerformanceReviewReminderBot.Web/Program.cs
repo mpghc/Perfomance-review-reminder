@@ -17,6 +17,7 @@ builder.Services.AddScoped<CurrentUserService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<TeammateService>();
 builder.Services.AddScoped<ReviewService>();
+builder.Services.AddScoped<FeedbackService>();
 
 var app = builder.Build();
 
