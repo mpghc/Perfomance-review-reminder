@@ -1,7 +1,106 @@
 @page "/reviews"
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject ReviewService ReviewService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Navigation
 
 <PageTitle>Reviews — ReviewPulse</PageTitle>
 
 <h1>Reviews</h1>
 
-<p>Performance review list — coming soon.</p>
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+    </div>
+}
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="NavigateToSchedule">Schedule Review</button>
+</div>
+
+@if (reviews is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (reviews.Count == 0)
+{
+    <p class="text-muted">No reviews found for your managed employees.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Review Date</th>
+                <th>Status</th>
+                <th>Feedback Progress</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var review in reviews)
+            {
+                var teammateCount = review.Employee.EmployeeTeammates.Count;
+                var feedbackCount = review.Feedbacks.Count;
+                <tr>
+                    <td>@review.Employee.FullName</td>
+                    <td>@review.ReviewDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <span class="badge @GetStatusBadgeClass(review.Status)">
+                            @review.Status
+                        </span>
+                    </td>
+                    <td>@feedbackCount / @teammateCount submitted</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PerformanceReview>? reviews;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReviewsAsync();
+    }
+
+    private async Task LoadReviewsAsync()
+    {
+        try
+        {
+            reviews = await ReviewService.GetByManagerAsync(CurrentUser.CurrentUserId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void NavigateToSchedule()
+    {
+        Navigation.NavigateTo("/reviews/schedule/0");
+    }
+
+    private static string GetStatusBadgeClass(ReviewStatus status) => status switch
+    {
+        ReviewStatus.Scheduled => "bg-info text-dark",
+        ReviewStatus.InProgress => "bg-warning text-dark",
+        ReviewStatus.Completed => "bg-success",
+        _ => "bg-secondary"
+    };
+}

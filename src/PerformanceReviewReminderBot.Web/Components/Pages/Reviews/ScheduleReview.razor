@@ -1,13 +1,98 @@
 @page "/reviews/schedule/{EmployeeId:int}"
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject ReviewService ReviewService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Navigation
 
 <PageTitle>Schedule Review — ReviewPulse</PageTitle>
 
 <h1>Schedule Review</h1>
 
-<p>Schedule a review for employee @EmployeeId — coming soon.</p>
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+@if (managedEmployees is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card" style="max-width: 500px;">
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="employeeSelect" class="form-label">Employee</label>
+                <select id="employeeSelect" class="form-select" @bind="selectedEmployeeId">
+                    <option value="0">-- Select Employee --</option>
+                    @foreach (var emp in managedEmployees)
+                    {
+                        <option value="@emp.Id">@emp.FullName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="reviewDate" class="form-label">Review Date</label>
+                <input id="reviewDate" type="date" class="form-control" @bind="reviewDate" />
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="HandleScheduleAsync" disabled="@isSubmitting">
+                    @(isSubmitting ? "Scheduling..." : "Schedule")
+                </button>
+                <a href="/reviews" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
-    /// <summary>The employee to schedule a review for.</summary>
+    /// <summary>Pre-selected employee Id from route parameter (0 = none).</summary>
     [Parameter]
     public int EmployeeId { get; set; }
+
+    private List<Employee>? managedEmployees;
+    private int selectedEmployeeId;
+    private DateOnly reviewDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
+    private string errorMessage = string.Empty;
+    private bool isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        managedEmployees = await ReviewService.GetManagedEmployeesAsync(CurrentUser.CurrentUserId);
+        selectedEmployeeId = EmployeeId;
+    }
+
+    private async Task HandleScheduleAsync()
+    {
+        errorMessage = string.Empty;
+
+        if (selectedEmployeeId == 0)
+        {
+            errorMessage = "Please select an employee.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            await ReviewService.ScheduleAsync(selectedEmployeeId, reviewDate);
+            Navigation.NavigateTo("/reviews");
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
 }
