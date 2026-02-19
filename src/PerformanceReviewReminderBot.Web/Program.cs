@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PerformanceReviewReminderBot.Web.Components;
 using PerformanceReviewReminderBot.Web.Data;
+using PerformanceReviewReminderBot.Web.Endpoints;
 using PerformanceReviewReminderBot.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,8 +36,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAntiforgery();
 
+app.MapEmployeeEndpoints();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+// Make the implicit Program class public so WebApplicationFactory<Program> can access it.
+public partial class Program { }
