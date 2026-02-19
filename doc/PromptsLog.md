@@ -103,6 +103,147 @@ A record of the AI-assisted documentation process for this project.
 
 ---
 
+## Session 2 — February 19, 2026
+
+### Prompt 7: Implementation — Iterations 1–7
+
+**User prompt (summary):**
+> Implement the approved Implementation Plan iteration by iteration. Start with Iteration 1. Stop after each iteration for review. Commit after approval.
+
+**Execution rules established by user:**
+- Implement only the requested iteration
+- Stop and wait for review after each iteration
+- Keep changes small and safe
+- Commit to git after approval
+
+---
+
+#### Iteration 1 — Project Scaffolding
+
+**What was done:**
+- Created branch `feature/iteration-1-project-scaffolding`
+- Scaffolded Blazor Server app (`dotnet new blazor --interactivity server --no-https --framework net9.0`)
+- Created xUnit test project with project reference
+- Added NuGet packages: EF Core SQLite 9.x, Design, NSubstitute, Mvc.Testing
+- Created folder structure: `Entities/`, `Data/`, `Services/`, `Endpoints/`, page subfolders, `Components/Shared/`
+
+**AI asked clarifying questions:**
+- .NET version → **User chose: .NET 9** (not .NET 10 which was installed as SDK 10.0.103)
+
+**User contribution:** Chose .NET 9 target framework.
+
+---
+
+#### UI Tweaks (between iterations)
+
+**User prompts (summary):**
+> 1. Change nav bar background color (chose dark slate/indigo gradient `#1e1e2f → #3b3b5c`)
+> 2. Remove Weather and Counter pages
+> 3. Remove About link
+> 4. Change navbar brand to "ReviewPulse"
+
+**What was done:**
+- Applied gradient to `MainLayout.razor.css` sidebar
+- Deleted `Counter.razor` and `Weather.razor`
+- Removed About link from `MainLayout.razor`
+- Changed brand text from "PerformanceReviewReminderBot.Web" to "ReviewPulse" in `NavMenu.razor`
+
+**User contribution:** Made all visual/branding decisions.
+
+---
+
+#### Iteration 2 — Entities & DbContext (Compile-Only)
+
+**What was done:**
+- Created enums: `EmployeeRole`, `ReviewStatus`, `NotificationType`
+- Created 5 entity classes: `Employee`, `EmployeeTeammate`, `PerformanceReview`, `Feedback`, `Notification`
+- Created `AppDbContext` with full `OnModelCreating` configuration
+- Key design decisions: `DeleteBehavior.Restrict` on TalentManager FK, `Cascade` on EmployeeTeammate, `SetNull` on Notification.Review FK
+
+---
+
+#### README Update (between iterations)
+
+**User prompt (summary):**
+> Add detected required dependencies to README.md.
+
+**What was done:**
+- Added Prerequisites section (.NET 9 SDK, EF Core CLI)
+- Added NuGet Dependencies tables for both web and test projects
+- Updated Quick Start with actual URL (`localhost:5064`)
+
+---
+
+#### Iteration 3 — Database Initialization & Migration
+
+**What was done:**
+- Added SQLite connection string to `appsettings.json`
+- Registered `AppDbContext` in `Program.cs` with SQLite provider
+- Added auto-migration on startup
+- Created `InitialCreate` migration (5 tables)
+- Added `*.db` patterns to `.gitignore`
+- Updated `dotnet-ef` tool from 7.0.10 to 10.0.3
+
+---
+
+#### Iteration 4 — Seed Data
+
+**What was done:**
+- Created `Data/SeedData.cs` — idempotent seed: 5 employees (Bill as TM, Tom/Alice/Bob/Carol as Employees), 12 teammate rows, 1 review, 2 notifications
+- Added `SeedData.Initialize` call in `Program.cs`
+- Created `SeedDataTests.cs` with 7 tests (all passing)
+
+---
+
+#### Iteration 5 — CurrentUserService & Role Switcher
+
+**What was done:**
+- Created `Services/CurrentUserService.cs` — scoped service, defaults to first TalentManager (Bill), `OnChange` event for UI refresh
+- Created `Components/Shared/RoleSwitcher.razor` — dropdown of all employees + role badge
+- Created `Components/Shared/NotificationBadge.razor` — placeholder bell icon with "0" count
+- Added both components to `NavMenu.razor`
+- Registered `CurrentUserService` as scoped in `Program.cs`
+
+---
+
+#### Iteration 6 — Layouts & Navigation Shell
+
+**What was done:**
+- Updated `NavMenu.razor` with role-aware nav links: Home (all), Dashboard/Reviews/Admin (TM only), Feedback (Employee only), Inbox (all). Subscribes to `CurrentUser.OnChange` for reactive updates.
+- Created `AdminLayout.razor` + `AdminLayout.razor.css` + `AdminNavMenu.razor` — admin sidebar with Employees, Teammates, "← Back to app"
+- Added SVG icon CSS classes for all nav items in `NavMenu.razor.css`
+- Created 9 placeholder pages: Dashboard, ReviewList, ScheduleReview, PendingFeedback, SubmitFeedback, Inbox, Employees, EmployeeForm, Teammates
+- Updated Home.razor with ReviewPulse branding
+- Admin pages use `@layout AdminLayout`; all others use default `MainLayout`
+
+---
+
+#### Iteration 7 — Employee Service & Admin CRUD Pages
+
+**What was done:**
+- Created `Services/EmployeeService.cs` with methods: `GetAllAsync`, `GetByIdAsync`, `CreateAsync`, `UpdateAsync`, `DeleteAsync`, `GetTalentManagersAsync`
+- Validations: required FullName/Email, can't delete employee with reviews, can't delete TM with assigned employees
+- Registered `EmployeeService` as scoped in `Program.cs`
+- Implemented `Pages/Admin/Employees.razor` — table with Name/Email/Role/TM columns, Add/Edit/Delete with confirmation prompt, success/error alerts
+- Implemented `Pages/Admin/EmployeeForm.razor` — create/edit form with DataAnnotations validation, role dropdown, conditional TalentManager dropdown
+- Created `EmployeeServiceTests.cs` with 13 unit tests (all passing)
+
+**Test summary at end of session:** 21 total tests, 0 failures.
+
+---
+
+#### Git Commit
+
+**User prompt:**
+> Commit changes with git after Iteration approval.
+
+**What was done:**
+- Staged all changes and committed on branch `feature/iteration-1-project-scaffolding`
+- Commit message: `feat: implement iterations 1-6`
+- Iterations 1–6 committed; Iteration 7 pending commit
+
+---
+
 ## Summary of User Decisions
 
 | # | Decision | Chosen Option |
@@ -118,3 +259,6 @@ A record of the AI-assisted documentation process for this project.
 | 9 | API layer | Minimal API endpoints alongside Blazor Server pages |
 | 10 | Test framework | xUnit + NSubstitute + in-memory SQLite |
 | 11 | Implementation approach | 14 iterative stages, each committable |
+| 12 | .NET version | .NET 9 (not .NET 10) |
+| 13 | Sidebar color | Dark slate/indigo gradient (`#1e1e2f → #3b3b5c`) |
+| 14 | App branding | "ReviewPulse" |

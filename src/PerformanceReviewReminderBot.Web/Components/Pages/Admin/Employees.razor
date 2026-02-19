@@ -1,8 +1,112 @@
 @page "/admin/employees"
 @layout PerformanceReviewReminderBot.Web.Components.Layout.AdminLayout
+@using PerformanceReviewReminderBot.Web.Entities
+@using PerformanceReviewReminderBot.Web.Services
+@rendermode InteractiveServer
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
 
 <PageTitle>Employees — Admin — ReviewPulse</PageTitle>
 
 <h1>Employees</h1>
 
-<p>Employee management — coming soon.</p>
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+    </div>
+}
+
+<div class="mb-3">
+    <a href="admin/employees/new" class="btn btn-primary">Add Employee</a>
+</div>
+
+@if (employees is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Talent Manager</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var employee in employees)
+            {
+                <tr>
+                    <td>@employee.FullName</td>
+                    <td>@employee.Email</td>
+                    <td>
+                        <span class="badge @(employee.Role == EmployeeRole.TalentManager ? "bg-warning text-dark" : "bg-info text-dark")">
+                            @employee.Role
+                        </span>
+                    </td>
+                    <td>@(employee.TalentManager?.FullName ?? "—")</td>
+                    <td>
+                        <a href="admin/employees/@employee.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                        @if (confirmDeleteId == employee.Id)
+                        {
+                            <button class="btn btn-sm btn-danger me-1" @onclick="() => DeleteEmployee(employee.Id)">Confirm</button>
+                            <button class="btn btn-sm btn-secondary" @onclick="() => confirmDeleteId = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => confirmDeleteId = employee.Id">Delete</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Employee>? employees;
+    private int? confirmDeleteId;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployees();
+    }
+
+    private async Task LoadEmployees()
+    {
+        employees = await EmployeeService.GetAllAsync();
+    }
+
+    private async Task DeleteEmployee(int id)
+    {
+        try
+        {
+            await EmployeeService.DeleteAsync(id);
+            successMessage = "Employee deleted successfully.";
+            errorMessage = string.Empty;
+            confirmDeleteId = null;
+            await LoadEmployees();
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+            successMessage = string.Empty;
+            confirmDeleteId = null;
+        }
+    }
+}

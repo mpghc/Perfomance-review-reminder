@@ -13,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddScoped<CurrentUserService>();
+builder.Services.AddScoped<EmployeeService>();
 
 var app = builder.Build();
 
