@@ -121,7 +121,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(f => f.Id);
 
             entity.Property(f => f.Content)
-                .IsRequired();
+                .IsRequired()
+                .HasMaxLength(4000);
 
             entity.Property(f => f.SubmittedAt)
                 .IsRequired();
@@ -152,7 +153,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(n => n.Id);
 
             entity.Property(n => n.Message)
-                .IsRequired();
+                .IsRequired()
+                .HasMaxLength(2000);
 
             entity.Property(n => n.IsRead)
                 .IsRequired();

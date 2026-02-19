@@ -137,7 +137,7 @@ public class EmployeeService(AppDbContext context)
     }
 
     /// <summary>
-    /// Validates that FullName and Email are not empty.
+    /// Validates that FullName and Email are not empty and that Email is a valid format.
     /// </summary>
     private static void ValidateRequiredFields(Employee employee)
     {
@@ -149,6 +149,12 @@ public class EmployeeService(AppDbContext context)
         if (string.IsNullOrWhiteSpace(employee.Email))
         {
             throw new InvalidOperationException($"{nameof(Employee.Email)} is required.");
+        }
+
+        // Validate email format using the .NET built-in MailAddress parser.
+        if (!System.Net.Mail.MailAddress.TryCreate(employee.Email, out _))
+        {
+            throw new InvalidOperationException($"{nameof(Employee.Email)} is not a valid email address.");
         }
     }
 }

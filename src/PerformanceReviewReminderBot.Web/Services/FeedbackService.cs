@@ -54,6 +54,12 @@ public class FeedbackService(AppDbContext context)
     }
 
     /// <summary>
+    /// Maximum allowed length (in characters) for feedback content.
+    /// Prevents excessively large payloads from being stored.
+    /// </summary>
+    private const int MaxContentLength = 4000;
+
+    /// <summary>
     /// Submits peer feedback for a performance review.
     /// </summary>
     /// <param name="reviewId">The Id of the review.</param>
@@ -61,7 +67,7 @@ public class FeedbackService(AppDbContext context)
     /// <param name="content">The feedback text content.</param>
     /// <returns>The created <see cref="Feedback"/> entity.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when: content is empty, review does not exist, review is Completed,
+    /// Thrown when: content is empty or exceeds 4000 characters, review does not exist, review is Completed,
     /// author is not a teammate of the reviewee, or duplicate feedback exists.
     /// </exception>
     public async Task<Feedback> SubmitAsync(int reviewId, int authorId, string content)
@@ -69,6 +75,11 @@ public class FeedbackService(AppDbContext context)
         if (string.IsNullOrWhiteSpace(content))
         {
             throw new InvalidOperationException("Feedback content is required.");
+        }
+
+        if (content.Length > MaxContentLength)
+        {
+            throw new InvalidOperationException($"Feedback content must not exceed {MaxContentLength} characters.");
         }
 
         var review = await _context.PerformanceReviews

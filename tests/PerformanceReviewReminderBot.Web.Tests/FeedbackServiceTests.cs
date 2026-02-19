@@ -179,6 +179,20 @@ public class FeedbackServiceTests
     }
 
     [Fact]
+    public async Task SubmitAsync_ContentExceedsMaxLength_ThrowsInvalidOperation()
+    {
+        using var context = CreateInMemoryContext();
+        var (_, alice, _, review) = SeedReviewScenario(context);
+        var service = new FeedbackService(context);
+        var oversizedContent = new string('x', 4001);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.SubmitAsync(review.Id, alice.Id, oversizedContent));
+
+        Assert.Contains("4000", ex.Message);
+    }
+
+    [Fact]
     public async Task GetByReviewAsync_ReturnsFeedbackWithAuthor()
     {
         using var context = CreateInMemoryContext();
