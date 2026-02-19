@@ -88,6 +88,21 @@ A record of the AI-assisted documentation process for this project.
 
 ---
 
+### Prompt 6: Implementation Plan
+
+**User prompt (summary):**
+> Generate implementation plan with iteration stages (init app, DB, mock data, base pages, etc.). Save to /doc folder.
+
+**What was done:**
+- Created `doc/implementation-plan.md` with 14 iteration stages
+- Each iteration is self-contained and produces a committable, runnable state
+- Stages: scaffolding → entities & DB → seed data → role switcher → layouts → employee CRUD → teammates → reviews → feedback → notifications → reminder engine → dashboard → API endpoints → polish
+- Updated `README.md` with link to implementation plan
+
+**User contribution:** Requested iterative approach with clear stages.
+
+---
+
 ## Summary of User Decisions
 
 | # | Decision | Chosen Option |
@@ -102,3 +117,4 @@ A record of the AI-assisted documentation process for this project.
 | 8 | Repository pattern | Not used — services call DbContext directly |
 | 9 | API layer | Minimal API endpoints alongside Blazor Server pages |
 | 10 | Test framework | xUnit + NSubstitute + in-memory SQLite |
+| 11 | Implementation approach | 14 iterative stages, each committable |

@@ -17,6 +17,7 @@ A bot that checks who has performance reviews this month, sends reminders to tea
 - [Requirements & User Stories](doc/requirements.md) — functional/non-functional requirements
 - [Data Model](doc/data-model.md) — entities, relationships, seed data
 - [Architecture](doc/architecture.md) — solution structure, routing, API, testing strategy
+- [Implementation Plan](doc/implementation-plan.md) — 14 iteration stages from scaffolding to polish
 
 ## Quick Start
 
