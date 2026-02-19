@@ -110,6 +110,18 @@ public class EmployeeServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_InvalidEmailFormat_ThrowsInvalidOperation()
+    {
+        using var context = CreateInMemoryContext();
+        var service = new EmployeeService(context);
+        var employee = new Employee { FullName = "Valid Name", Email = "not-an-email", Role = EmployeeRole.Employee };
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(employee));
+
+        Assert.Contains("Email", ex.Message);
+    }
+
+    [Fact]
     public async Task UpdateAsync_ValidData_UpdatesEmployee()
     {
         using var context = CreateInMemoryContext();

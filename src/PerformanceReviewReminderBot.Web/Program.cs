@@ -36,8 +36,24 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // Enforce HSTS (HTTP Strict Transport Security) in production to prevent downgrade attacks.
+    app.UseHsts();
 }
 
+// Redirect all HTTP requests to HTTPS.
+app.UseHttpsRedirection();
+
+// Add security headers to every response to mitigate common web vulnerabilities:
+// - X-Content-Type-Options: prevents MIME-type sniffing
+// - X-Frame-Options: prevents clickjacking by disallowing iframe embedding
+// - Referrer-Policy: limits referrer information sent to third-party sites
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await next();
+});
 
 app.UseAntiforgery();
 
