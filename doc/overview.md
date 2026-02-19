@@ -17,7 +17,7 @@ This bot solves that by:
 ## Key Scenario (Example)
 
 > **Tom** has a performance review scheduled for March 15.  
-> His team members — Alice, Bob, and Carol — should provide feedback to Tom's Talent Manager, **Bill**.  
+> His teammates — Alice, Bob, and Carol — should provide feedback to Tom's Talent Manager, **Bill**.  
 > Starting **14 days** before the review date, the system sends daily reminders to Alice, Bob, and Carol.  
 > If any of them haven't submitted feedback by **3 days** before the review, Bill gets a notification listing who is late.
 
@@ -29,7 +29,7 @@ Deliver a **working study application** where at least **90% of the code is gene
 
 | In Scope | Out of Scope |
 |---|---|
-| Admin page: employee & team management (CRUD) | Real authentication (login/password) |
+| Admin page: employee & teammate management (CRUD) | Real authentication (login/password) |
 | Performance review scheduling | Integration with HR systems |
 | Notification engine (fake email — stored in DB, visible in UI) | Real email delivery |
 | Talent Manager dashboard (missing feedback alerts) | Mobile app |

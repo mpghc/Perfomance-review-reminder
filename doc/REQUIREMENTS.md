@@ -5,27 +5,28 @@
 ### FR-1: Employee Management (Admin Page)
 
 - Talent Manager can list, create, edit, and delete employees.
-- Each employee has: Name, Email, Role (Employee / Talent Manager), Team assignment.
+- Each employee has: Name, Email, Role (Employee / Talent Manager).
+- Each employee is assigned to exactly one Talent Manager.
 - This functionality lives on a dedicated **Admin page**.
 
-### FR-2: Team Management (Admin Page)
+### FR-2: Teammate Management (Admin Page)
 
-- Talent Manager can create and edit teams.
-- Each team has a name and an assigned Talent Manager (one per team).
-- Employees are assigned to exactly one team.
+- Talent Manager can assign teammates to each employee.
+- Teammate relationship is bidirectional (if Alice is Tom's teammate, Tom is Alice's teammate).
+- An employee can have zero or many teammates.
 - This functionality lives on the **Admin page**.
 
 ### FR-3: Performance Review Scheduling (Talent Manager)
 
 - Talent Manager can schedule a performance review for an employee by setting a **review date**.
 - A review has a status: **Scheduled → In Progress → Completed**.
-- When a review is scheduled, the system knows who needs to provide feedback (= all team members of the reviewee, excluding the reviewee themselves).
+- When a review is scheduled, the system knows who needs to provide feedback (= all **teammates** of the reviewee).
 
 ### FR-4: Notification Engine
 
 - The system runs a **background job** (e.g., daily) that checks all upcoming reviews.
 - **Reminder window**: starts `N` days before the review date (default: 14 days).
-- For each review in the reminder window, the system creates a notification for every team member who hasn't submitted feedback yet.
+- For each review in the reminder window, the system creates a notification for every **teammate** who hasn't submitted feedback yet.
 - Notifications are stored in the database and displayed in the app UI (fake email).
 
 ### FR-5: Feedback Submission (Employee)
@@ -36,7 +37,7 @@
 
 ### FR-6: Talent Manager Dashboard
 
-- A Talent Manager sees all reviews for their team members.
+- A Talent Manager sees all reviews for their employees.
 - For each review, the Talent Manager sees: who has submitted feedback and who hasn't.
 - If the deadline is within **3 days** and feedback is still missing, the item is highlighted as **overdue**.
 - The Talent Manager also receives notifications about overdue feedback.
@@ -68,9 +69,9 @@
 | ID | Story |
 |---|---|
 | US-01 | As a Talent Manager, I want to manage employees on the Admin page so I can keep the directory up to date. |
-| US-02 | As a Talent Manager, I want to manage teams and assign employees on the Admin page. |
+| US-02 | As a Talent Manager, I want to manage teammate relationships between employees on the Admin page. |
 | US-03 | As a Talent Manager, I want to schedule performance reviews for employees. |
-| US-04 | As a Talent Manager, I want to see a dashboard of upcoming reviews for my team. |
+| US-04 | As a Talent Manager, I want to see a dashboard of upcoming reviews for my employees. |
 | US-05 | As a Talent Manager, I want to see who has/hasn't submitted feedback for each review. |
 | US-06 | As a Talent Manager, I want to be notified when feedback is overdue. |
 
