@@ -1,0 +1,13 @@
+@page "/reviews/schedule/{EmployeeId:int}"
+
+<PageTitle>Schedule Review — ReviewPulse</PageTitle>
+
+<h1>Schedule Review</h1>
+
+<p>Schedule a review for employee @EmployeeId — coming soon.</p>
+
+@code {
+    /// <summary>The employee to schedule a review for.</summary>
+    [Parameter]
+    public int EmployeeId { get; set; }
+}

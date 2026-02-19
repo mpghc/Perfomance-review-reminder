@@ -1,0 +1,15 @@
+@page "/admin/employees/new"
+@page "/admin/employees/{Id:int}"
+@layout PerformanceReviewReminderBot.Web.Components.Layout.AdminLayout
+
+<PageTitle>Employee Form — Admin — ReviewPulse</PageTitle>
+
+<h1>@(Id.HasValue ? "Edit Employee" : "New Employee")</h1>
+
+<p>Employee form — coming soon.</p>
+
+@code {
+    /// <summary>The employee Id for edit mode; null for create mode.</summary>
+    [Parameter]
+    public int? Id { get; set; }
+}

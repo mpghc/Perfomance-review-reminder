@@ -19,10 +19,37 @@ A bot that checks who has performance reviews this month, sends reminders to tea
 - [Architecture](doc/architecture.md) — solution structure, routing, API, testing strategy
 - [Implementation Plan](doc/implementation-plan.md) — 14 iteration stages from scaffolding to polish
 
+## Prerequisites
+
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [EF Core CLI tools](https://learn.microsoft.com/ef/core/cli/dotnet) — `dotnet tool install -g dotnet-ef`
+
+## NuGet Dependencies
+
+### Web Project
+
+| Package | Purpose |
+|---|---|
+| `Microsoft.EntityFrameworkCore.Sqlite` | SQLite database provider for EF Core |
+| `Microsoft.EntityFrameworkCore.Design` | EF Core migration tooling |
+
+### Test Project
+
+| Package | Purpose |
+|---|---|
+| `xunit` | Unit testing framework |
+| `xunit.runner.visualstudio` | Test runner for Visual Studio / `dotnet test` |
+| `Microsoft.NET.Test.Sdk` | .NET test infrastructure |
+| `coverlet.collector` | Code coverage collection |
+| `NSubstitute` | Mocking library for unit tests |
+| `Microsoft.EntityFrameworkCore.Sqlite` | In-memory SQLite for integration tests |
+| `Microsoft.AspNetCore.Mvc.Testing` | Integration testing for ASP.NET Core |
+
 ## Quick Start
 
 ```bash
-# (coming soon — once the project is scaffolded)
 cd src/PerformanceReviewReminderBot.Web
 dotnet run
 ```
+
+Open <http://localhost:5064> in your browser.

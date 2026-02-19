@@ -1,0 +1,13 @@
+@page "/feedback/{ReviewId:int}"
+
+<PageTitle>Submit Feedback — ReviewPulse</PageTitle>
+
+<h1>Submit Feedback</h1>
+
+<p>Submit feedback for review @ReviewId — coming soon.</p>
+
+@code {
+    /// <summary>The review to submit feedback for.</summary>
+    [Parameter]
+    public int ReviewId { get; set; }
+}
